@@ -12,11 +12,23 @@
         /* --- 全局样式 --- */
         body { margin: 0; padding: 0; background: #000; font-family: 'Microsoft YaHei', sans-serif; color: #fff; overflow: hidden; width: 100vw; height: 100vh; user-select: none; }
 
-        /* --- 开场动画 --- */
+        /* --- 开场动画 (无倒计时版) --- */
         #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; transition: opacity 1s ease; }
-        #intro-countdown { font-size: 3rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #87cefa; margin-bottom: 40px; letter-spacing: 5px; }
-        #planet-container { width: 300px; height: 300px; cursor: pointer; display: none; animation: float 6s ease-in-out infinite; }
-        #click-hint { margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 1rem; animation: pulse 1.5s infinite; display: none; }
+        
+        /* 星球容器 */
+        #planet-container { width: 300px; height: 300px; cursor: pointer; animation: float 6s ease-in-out infinite; }
+        
+        /* 点击提示文字 */
+        #click-hint { 
+            margin-top: 40px; 
+            color: #87cefa; 
+            font-size: 1.2rem; 
+            letter-spacing: 5px;
+            animation: pulse 1.5s infinite; 
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(135, 206, 250, 0.5);
+        }
+        
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
         @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
 
@@ -46,23 +58,18 @@
             border-color: rgba(135, 206, 250, 0.5);
             z-index: 999 !important;
         }
-        /* 播放状态的样式 */
-        .memory-card.playing {
-            border-color: #87cefa;
-            box-shadow: 0 0 20px #87cefa;
-        }
+        /* 播放状态样式：边框发光 + 图标旋转 */
+        .memory-card.playing { border-color: #87cefa; box-shadow: 0 0 25px rgba(135, 206, 250, 0.6); transform: scale(1.02); z-index: 990; }
+        .memory-card.playing .music-badge i { animation: spin 2s linear infinite; color: #87cefa; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .memory-card:active { cursor: grabbing; }
         .memory-card img { width: 100%; border-radius: 8px; pointer-events: none; display: block; margin-bottom: 10px; }
         .memory-text { font-size: 0.9rem; line-height: 1.5; margin-bottom: 8px; color: #ddd; }
         .memory-date { font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* 音乐图标 */
         .music-badge { color: #666; font-size: 14px; transition: 0.3s; }
-        .playing .music-badge { color: #87cefa; animation: spin 2s linear infinite; } /* 播放时旋转 */
-        
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+
         .btn-delete { position: absolute; top: 10px; right: 10px; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 14px; z-index: 10; }
         .btn-delete:hover { color: #ff4d4d; }
 
@@ -87,9 +94,8 @@
     <audio id="bgm-player"></audio>
 
     <div id="intro-screen">
-        <div id="intro-countdown"></div>
         <div id="planet-container"></div>
-        <div id="click-hint">点击星球进入宇宙</div>
+        <div id="click-hint">点击星球 进入我们的世界</div>
     </div>
 
     <div id="main-app">
@@ -97,7 +103,7 @@
             <div class="app-title">COSMIC LOVE</div>
             <div class="app-desc">
                 浩瀚宇宙，星河璀璨。<br>
-                (提示: 点击卡片即可播放/暂停音乐)
+                (提示: 点击卡片可播放/暂停音乐)
             </div>
             <div class="timer-box">
                 <div class="timer-label">我们已经航行了</div>
@@ -138,29 +144,35 @@
             appKey: 'FAhjdMJ1gGA5WggHPqO5cBF8',
             serverURL: 'https://gxw6rpvs.api.lncldglobal.com',
             startDate: '2023-05-20T13:14:00',
-            defaultMusic: 'https://music.163.com/song/media/outer/url?id=4875306.mp3' 
+            // ✅ 这里换了一个绝对能播放的公共CDN链接 (Erik Satie - Gymnopédie No.1)
+            defaultMusic: 'https://files.freemusicarchive.org/storage-new/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3' 
         };
 
         AV.init({ appId: CONFIG.appId, appKey: CONFIG.appKey, serverURL: CONFIG.serverURL });
 
-        // --- 音乐播放逻辑 (点击版) ---
+        // --- 音乐播放逻辑 ---
         const player = document.getElementById('bgm-player');
-        let currentPlayingCard = null; // 记录当前哪张卡片在响
+        let currentPlayingCard = null;
         
         function toggleMusic(url, cardEl) {
             if (!url) return;
 
-            // 情况1: 点击正在播放的卡片 -> 暂停
+            // 1. 如果点击的是当前正在放的 -> 暂停
             if (currentPlayingCard === cardEl) {
-                player.pause();
-                cardEl.classList.remove('playing');
-                currentPlayingCard = null;
+                if (player.paused) {
+                    player.play();
+                    cardEl.classList.add('playing');
+                } else {
+                    player.pause();
+                    cardEl.classList.remove('playing');
+                }
                 return;
             }
 
-            // 情况2: 点击新卡片 -> 停止旧的，播新的
+            // 2. 如果点击了新卡片 -> 停止旧的，播新的
             if (currentPlayingCard) {
                 currentPlayingCard.classList.remove('playing');
+                player.pause();
             }
 
             player.src = url;
@@ -168,10 +180,13 @@
             player.play().then(() => {
                 cardEl.classList.add('playing');
                 currentPlayingCard = cardEl;
-            }).catch(e => console.log("播放失败", e));
+            }).catch(e => {
+                console.log("播放被拦截或链接失效", e);
+                alert("音乐播放失败，可能是链接无效或网络问题。");
+            });
         }
 
-        // --- 卡片创建逻辑 ---
+        // --- 卡片逻辑 ---
         const memoryLayer = document.getElementById('memory-layer');
         let zIndexCounter = 10;
 
@@ -194,9 +209,7 @@
             div.id = 'card-' + item.id;
             const musicUrl = data.musicUrl || CONFIG.defaultMusic;
             
-            // 点击置顶 + 处理播放逻辑
-            // 我们需要判断是“拖拽”还是“点击”
-            // 逻辑：mousedown 时记录位置，mouseup 时如果移动距离很小，则视为点击
+            // 拖拽 vs 点击 判断逻辑
             let startX, startY;
             div.addEventListener('mousedown', (e) => {
                 div.style.zIndex = ++zIndexCounter;
@@ -207,9 +220,8 @@
             div.addEventListener('mouseup', (e) => {
                 const diffX = Math.abs(e.clientX - startX);
                 const diffY = Math.abs(e.clientY - startY);
-                // 移动小于5像素，认为是点击
+                // 移动极小，视为点击
                 if (diffX < 5 && diffY < 5) {
-                    // 只有点的不是删除按钮才播放
                     if(!e.target.closest('.btn-delete')) {
                         toggleMusic(musicUrl, div);
                     }
@@ -224,7 +236,7 @@
                 <div class="memory-text">${data.content || ''}</div>
                 <div class="memory-date">
                     <span>${item.createdAt.toLocaleDateString()}</span>
-                    <div class="music-badge"><i class="fas fa-compact-disc"></i></div>
+                    <div class="music-badge"><i class="fas fa-music"></i></div>
                 </div>
             `;
             
@@ -232,16 +244,13 @@
             memoryLayer.appendChild(div);
         }
 
-        // --- 拖拽逻辑 (独立封装) ---
         function setupDrag(el) {
             let isDragging = false, initialLeft, initialTop, dragStartX, dragStartY;
             el.addEventListener('mousedown', (e) => {
                 if(e.target.closest('.btn-delete')) return;
                 isDragging = true; 
-                dragStartX = e.clientX; 
-                dragStartY = e.clientY;
-                initialLeft = el.offsetLeft; 
-                initialTop = el.offsetTop;
+                dragStartX = e.clientX; dragStartY = e.clientY;
+                initialLeft = el.offsetLeft; initialTop = el.offsetTop;
                 el.style.cursor = 'grabbing';
             });
             window.addEventListener('mousemove', (e) => {
@@ -252,7 +261,6 @@
             window.addEventListener('mouseup', () => { isDragging = false; el.style.cursor = 'grab'; });
         }
 
-        // --- 布局 ---
         function scatterCards() {
             const cards = document.querySelectorAll('.memory-card');
             const W = document.getElementById('right-panel').offsetWidth;
@@ -311,32 +319,36 @@
             document.getElementById('card-' + id).remove();
         }
 
-        // --- 倒计时与星球 ---
-        let count = 3;
-        const cd = document.getElementById('intro-countdown');
+        // --- 初始化星球 (立即加载) ---
         const pl = document.getElementById('planet-container');
-        const tm = setInterval(() => {
-            cd.innerText = `宇宙链接中... ${count}`; count--;
-            if (count < 0) { clearInterval(tm); cd.style.display = 'none'; initPlanet(); pl.style.display = 'block'; document.getElementById('click-hint').style.display='block'; }
-        }, 1000);
+        window.onload = () => { initPlanet(); };
 
         function initPlanet() {
             const w=300, h=300; const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(50, w/h, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             renderer.setSize(w, h); pl.appendChild(renderer.domElement);
+            
             const geo = new THREE.SphereGeometry(5, 32, 32);
             const mat = new THREE.MeshPhongMaterial({ color: 0x2a75bb, emissive: 0x112244, specular: 0x111111, shininess: 30 });
             const sphere = new THREE.Mesh(geo, mat); scene.add(sphere);
+            
             const l1 = new THREE.DirectionalLight(0xffffff, 1.5); l1.position.set(10,10,10); scene.add(l1);
             scene.add(new THREE.AmbientLight(0x404040));
             camera.position.z = 15;
+            
             function animate() { requestAnimationFrame(animate); sphere.rotation.y += 0.01; sphere.rotation.x += 0.005; renderer.render(scene, camera); }
             animate();
         }
+        
         pl.addEventListener('click', () => {
             document.getElementById('intro-screen').style.opacity = 0;
-            setTimeout(() => { document.getElementById('intro-screen').style.display = 'none'; document.getElementById('main-app').classList.add('active'); resizeCanvas(); loadMemories(); }, 1000);
+            setTimeout(() => { 
+                document.getElementById('intro-screen').style.display = 'none'; 
+                document.getElementById('main-app').classList.add('active'); 
+                resizeCanvas(); 
+                loadMemories(); 
+            }, 1000);
         });
 
         // --- 流星 ---
