@@ -3,129 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我们的爱 | Our Love Story</title>
+    <title>星辰之恋 | Our Stellar Love</title>
     <style>
-        /* --- 1. 全局样式 --- */
+        /* --- 全局样式 & 星空背景 --- */
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); /* 温暖的渐变色 */
-            font-family: 'Microsoft YaHei', sans-serif;
-            color: #333;
+            background: #000; /* 纯黑背景作为星空基础 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #eee;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
+            position: relative;
+            background: linear-gradient(to bottom, #0a1128 0%, #000 100%); /* 深蓝到黑的渐变 */
         }
 
-        /* --- 2. 浮动爱心背景动画 --- */
-        .hearts {
+        /* --- 星星动画 --- */
+        .stars {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 让点击穿透，不影响操作 */
             z-index: 0;
-        }
-        .heart {
-            position: absolute;
-            bottom: -20px;
-            color: rgba(255, 255, 255, 0.6);
-            animation: floatUp 10s linear infinite;
-            font-size: 20px;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+            pointer-events: none;
         }
 
-        /* --- 3. 内容容器 --- */
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 5s infinite alternate, floatStars 100s linear infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        @keyframes floatStars {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-2000px); } /* 向上漂浮 */
+        }
+
+
+        /* --- 内容容器 --- */
         .container {
-            z-index: 1;
+            z-index: 1; /* 确保内容在星星上面 */
             text-align: center;
             margin-top: 50px;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px; /* 增加最大宽度 */
+            padding: 20px;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.4); /* 半透明背景，略微遮挡星空 */
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); /* 淡淡的蓝绿色发光 */
+            backdrop-filter: blur(5px); /* 背景模糊效果 */
+            margin-bottom: 50px; /* 底部留白 */
         }
 
-        /* --- 4. 计时器样式 --- */
+        /* --- 计时器样式 --- */
         .timer-box {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            animation: breathe 3s ease-in-out infinite; /* 呼吸浮动效果 */
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
         .timer-title {
-            font-size: 1.2rem;
-            color: #ff6b6b;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: #8affff; /* 亮青色 */
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px #00ffff;
         }
         #timer {
-            font-size: 1.5rem;
+            font-size: 2.2rem; /* 增大字体 */
             font-weight: bold;
-            color: #444;
+            color: #00ffff; /* 亮青色 */
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ffff;
         }
 
-        /* --- 5. 照片与文字样式 --- */
-        .photo-card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            transform: translateY(0);
-            transition: transform 0.3s;
+        /* --- 照片网格布局 --- */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* 响应式网格 */
+            gap: 30px; /* 网格间距 */
+            margin-top: 40px;
         }
-        .photo-card:hover {
-            transform: translateY(-10px); /* 鼠标悬停上浮 */
+
+        /* --- 星球照片卡片样式 --- */
+        .planet-card {
+            background: rgba(255, 255, 255, 0.08); /* 略透明 */
+            padding: 20px;
+            border-radius: 50%; /* 圆形卡片 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1; /* 保持宽高比 */
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5); /* 强烈的光晕效果 */
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
+            position: relative;
+            overflow: hidden; /* 隐藏超出星球边缘的部分 */
         }
-        .photo-card img {
+        .planet-card:hover {
+            transform: scale(1.05) rotate(5deg); /* 悬停轻微放大旋转 */
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(135, 206, 250, 0.5); /* 更强的光晕 */
+        }
+        .planet-card img {
             width: 100%;
+            height: 100%;
+            object-fit: cover; /* 裁剪图片以适应圆形 */
+            border-radius: 50%; /* 确保图片也是圆形 */
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); /* 内部阴影，增加立体感 */
+        }
+        .planet-description {
+            position: absolute;
+            bottom: -5px; /* 描述文字位置调整 */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
             border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            max-width: 90%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            white-space: pre-wrap; /* 允许换行 */
+        }
+        .planet-card:hover .planet-description {
+            opacity: 1;
+        }
+
+
+        /* --- 上传区域样式 (本地预览) --- */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 50px;
+            border: 1px dashed rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            text-align: center;
+            color: #8affff;
+        }
+        .upload-area {
+            border: 2px dashed #00ffff; /* 虚线边框 */
+            border-radius: 10px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            position: relative;
+        }
+        .upload-area.highlight {
+            background-color: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+        }
+        .upload-area p {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        .upload-area input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        #preview-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .preview-item {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             display: block;
         }
-        .photo-text {
-            margin-top: 15px;
-            line-height: 1.6;
+        .preview-item button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
             font-size: 1rem;
-            color: #555;
+            cursor: pointer;
         }
 
-        @keyframes breathe {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+        .upload-buttons {
+            margin-top: 25px;
+        }
+        .upload-buttons button {
+            background-color: #00ffff;
+            color: #0a1128;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            margin: 0 10px;
+        }
+        .upload-buttons button:hover {
+            background-color: #00e6e6;
+            transform: translateY(-3px);
+        }
+        .upload-buttons a {
+            color: #00ffff;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+        .upload-buttons a:hover {
+            color: #8affff;
         }
     </style>
 </head>
 <body>
 
-    <div class="hearts" id="heartsContainer"></div>
+    <div class="stars" id="starsContainer"></div>
 
     <div class="container">
         <div class="timer-box">
-            <div class="timer-title">我们要一起走过</div>
+            <div class="timer-title">我们的星辰之旅已开启</div>
             <div id="timer">计算中...</div>
         </div>
 
-        <div class="photo-card">
-            <img src="DSC_1894.JPG" alt="我们的合照">
-            <div class="photo-text">
-                这是我们在海边的那次旅行。<br>
-                记得那时候风很大，但你的手很暖。
+        <div class="photo-grid" id="photoGrid">
+            <div class="planet-card">
+                <img src="https://images.unsplash.com/photo-1542845181-fc05d5c0b05b?q=80&w=300&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGNvdXBsZXxlbnwwfHwwfHx8MA%3D%3D" alt="我们的星球1">
+                <div class="planet-description">
+                    我们的第一个旅行星球，充满阳光和海风。
+                </div>
+            </div>
+            <div class="planet-card">
+                <img src="https://images.unsplash.com/photo-1596205739347-1bb48011f008?q=80&w=300&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTQwfHxjb3VwbGV8ZW58MHx8MHx8fDA%3D" alt="我们的星球2">
+                <div class="planet-description">
+                    在这个安静的星球上，我们分享了无数个秘密。
+                </div>
+            </div>
+            </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="imageUpload" multiple accept="image/*">
+                <p>将照片拖拽到这里，或点击选择文件</p>
+                <p style="font-size:0.85rem; margin-top:10px;">(此为本地预览，不会永久保存哦)</p>
+            </div>
+            <div id="preview-images">
+                </div>
+            <div class="upload-buttons">
+                <button onclick="addPreviewImagesToGrid()">将预览照片添加到网站</button>
+                <a href="https://imgbb.com/" target="_blank">前往免费图床上传照片 (获取链接)</a>
             </div>
         </div>
 
-        <div class="photo-card">
-            <img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=600&auto=format&fit=crop" alt="牵手">
-            <div class="photo-text">
-                简单的幸福，就是和你一起吃顿饭，散散步。<br>
-                未来的每一天，都要有你。
-            </div>
-        </div>
     </div>
 
     <script>
@@ -139,41 +304,143 @@
             const diff = now - startDate; // 毫秒差
 
             if (diff < 0) {
-                document.getElementById("timer").innerText = "时间还没开始呢！";
+                document.getElementById("timer").innerText = "等待星辰汇聚...";
                 return;
             }
 
-            // 计算时间单位
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
             const minutes = Math.floor((diff / (1000 * 60)) % 60);
             const seconds = Math.floor((diff / 1000) % 60);
 
-            document.getElementById("timer").innerHTML = 
-                `${days} <span style="font-size:0.8em">天</span> 
-                 ${hours} <span style="font-size:0.8em">小时</span> 
-                 ${minutes} <span style="font-size:0.8em">分</span> 
-                 ${seconds} <span style="font-size:0.8em">秒</span>`;
+            document.getElementById("timer").innerHTML =
+                `${days} <span style="font-size:0.7em">天</span>
+                 ${hours} <span style="font-size:0.7em">小时</span>
+                 ${minutes} <span style="font-size:0.7em">分</span>
+                 ${seconds} <span style="font-size:0.7em">秒</span>`;
         }
+        setInterval(updateTimer, 1000);
+        updateTimer();
 
-        setInterval(updateTimer, 1000); // 每秒刷新一次
-        updateTimer(); // 立即执行一次
-
-        // --- 3. 生成背景浮动爱心 ---
-        function createHearts() {
-            const container = document.getElementById('heartsContainer');
-            for (let i = 0; i < 15; i++) { // 生成15个爱心
-                const heart = document.createElement('div');
-                heart.classList.add('heart');
-                heart.innerHTML = '❤';
-                heart.style.left = Math.random() * 100 + 'vw'; // 随机水平位置
-                heart.style.animationDuration = (Math.random() * 5 + 5) + 's'; // 随机速度 5-10秒
-                heart.style.fontSize = (Math.random() * 20 + 10) + 'px'; // 随机大小
-                heart.style.animationDelay = Math.random() * 5 + 's'; // 随机延迟
-                container.appendChild(heart);
+        // --- 3. 星星背景动画生成 ---
+        const starsContainer = document.getElementById('starsContainer');
+        function createStars() {
+            for (let i = 0; i < 150; i++) { // 生成150颗星星
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px'; // 1-4px
+                star.style.left = Math.random() * 100 + 'vw';
+                star.style.top = Math.random() * 100 + 'vh';
+                star.style.animationDelay = (Math.random() * -100) + 's'; // 负延迟让星星一开始就分散
+                star.style.animationDuration = (Math.random() * 80 + 120) + 's'; // 80-200s 漂浮速度
+                starsContainer.appendChild(star);
             }
         }
-        createHearts();
+        createStars();
+
+
+        // --- 4. 图片上传本地预览逻辑 ---
+        const uploadArea = document.getElementById('uploadArea');
+        const imageUpload = document.getElementById('imageUpload');
+        const previewImagesContainer = document.getElementById('preview-images');
+        let currentPreviewFiles = []; // 存储当前预览的图片文件
+
+        // 阻止默认拖拽行为
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false); // 防止拖拽到浏览器其他地方
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // 拖拽进入和离开时的样式变化
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('highlight'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('highlight'), false);
+        });
+
+        // 处理文件拖放
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles(files);
+        }
+
+        // 处理文件选择 (通过点击或拖拽)
+        imageUpload.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue; // 只处理图片文件
+
+                currentPreviewFiles.push(file); // 添加到预览文件数组
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.classList.add('preview-item');
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="预览">
+                        <button onclick="removePreview(this, '${file.name}')">X</button>
+                    `;
+                    previewImagesContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 移除预览图片
+        function removePreview(button, fileName) {
+            button.closest('.preview-item').remove();
+            currentPreviewFiles = currentPreviewFiles.filter(file => file.name !== fileName);
+        }
+
+        // 将预览图片添加到主网格
+        function addPreviewImagesToGrid() {
+            if (currentPreviewFiles.length === 0) {
+                alert('请先选择或拖拽图片进行预览。');
+                return;
+            }
+
+            const photoGrid = document.getElementById('photoGrid');
+
+            currentPreviewFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newCard = document.createElement('div');
+                    newCard.classList.add('planet-card');
+
+                    // 弹窗询问描述
+                    let description = prompt("请输入这张照片的文字描述：");
+                    if (description === null) { // 如果用户取消
+                        description = "";
+                    }
+
+                    newCard.innerHTML = `
+                        <img src="${e.target.result}" alt="我们的星球">
+                        <div class="planet-description">${description.replace(/\n/g, '<br>')}</div>
+                    `;
+                    photoGrid.appendChild(newCard);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // 清空预览区
+            previewImagesContainer.innerHTML = '';
+            currentPreviewFiles = [];
+            alert('预览照片已添加到网站，但请注意，这些照片只会在您当前浏览器中显示，刷新页面后会消失。若要永久保存，请使用“前往免费图床上传”功能，并将链接手动替换到代码中。');
+        }
+
     </script>
 </body>
 </html>
