@@ -4,189 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我们的宇宙之旅</title>
-    
     <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 
     <style>
         /* --- 全局样式 --- */
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            font-family: 'Microsoft YaHei', sans-serif;
-            color: #fff;
-            overflow: hidden; /* 禁止滚动 */
-            width: 100vw;
-            height: 100vh;
-            user-select: none; /* 防止文字被意外选中 */
-        }
+        body { margin: 0; padding: 0; background: #000; font-family: 'Microsoft YaHei', sans-serif; color: #fff; overflow: hidden; width: 100vw; height: 100vh; user-select: none; }
 
-        /* --- 1. 开场动画与星球 --- */
-        #intro-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            transition: opacity 1s ease;
-        }
-        #intro-countdown {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 20px #87cefa;
-            margin-bottom: 40px;
-            letter-spacing: 5px;
-        }
-        #planet-container {
-            width: 300px; height: 300px;
-            cursor: pointer;
-            display: none; /* 倒计时结束后显示 */
-            animation: float 6s ease-in-out infinite;
-        }
-        #click-hint {
-            margin-top: 20px;
-            color: rgba(255,255,255,0.6);
-            font-size: 1rem;
-            animation: pulse 1.5s infinite;
-            display: none;
-        }
+        /* --- 开场动画 --- */
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; transition: opacity 1s ease; }
+        #intro-countdown { font-size: 3rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #87cefa; margin-bottom: 40px; letter-spacing: 5px; }
+        #planet-container { width: 300px; height: 300px; cursor: pointer; display: none; animation: float 6s ease-in-out infinite; }
+        #click-hint { margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 1rem; animation: pulse 1.5s infinite; display: none; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
         @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
 
-
-        /* --- 2. 主界面布局 --- */
-        #main-app {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1.5s ease;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            position: relative;
-        }
+        /* --- 主界面 --- */
+        #main-app { opacity: 0; pointer-events: none; transition: opacity 1.5s ease; width: 100%; height: 100%; display: flex; position: relative; }
         #main-app.active { opacity: 1; pointer-events: all; }
 
-        /* 左侧信息栏 */
-        #left-panel {
-            width: 320px;
-            height: 100%;
-            background: rgba(20, 20, 30, 0.6);
-            backdrop-filter: blur(15px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px 30px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-            position: relative;
-        }
+        #left-panel { width: 320px; height: 100%; background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(15px); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 40px 30px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 100; position: relative; }
         .app-title { font-size: 1.8rem; color: #87cefa; margin-bottom: 10px; font-weight: bold; }
         .app-desc { font-size: 0.9rem; color: #aaa; line-height: 1.6; margin-bottom: 40px; }
-        .timer-box {
-            background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+        .timer-box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
         .timer-label { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
         #timer-display { font-size: 1.2rem; color: #fff; font-family: monospace; }
 
-        /* 右侧内容区 */
-        #right-panel {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-        #meteor-canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0; pointer-events: none;
-        }
+        #right-panel { flex: 1; position: relative; overflow: hidden; }
+        #meteor-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 
-        /* --- 3. 回忆卡片 (可拖拽) --- */
+        /* --- 回忆卡片 --- */
         .memory-card {
-            position: absolute; /* 绝对定位实现自由拖拽 */
-            width: 260px;
-            background: rgba(30, 30, 40, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            cursor: grab;
-            transition: transform 0.1s, box-shadow 0.2s;
-            user-select: none;
+            position: absolute; width: 260px; background: rgba(30, 30, 40, 0.7); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: grab; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
             color: #eee;
         }
-        .memory-card:active { cursor: grabbing; transform: scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 999 !important; }
-        .memory-card img {
-            width: 100%;
-            border-radius: 8px;
-            pointer-events: none; /* 防止拖拽图片本身 */
-            display: block;
-            margin-bottom: 10px;
+        .memory-card:hover {
+            box-shadow: 0 15px 40px rgba(135, 206, 250, 0.2); 
+            border-color: rgba(135, 206, 250, 0.5);
+            z-index: 999 !important;
         }
+        /* 播放状态的样式 */
+        .memory-card.playing {
+            border-color: #87cefa;
+            box-shadow: 0 0 20px #87cefa;
+        }
+        
+        .memory-card:active { cursor: grabbing; }
+        .memory-card img { width: 100%; border-radius: 8px; pointer-events: none; display: block; margin-bottom: 10px; }
         .memory-text { font-size: 0.9rem; line-height: 1.5; margin-bottom: 8px; color: #ddd; }
-        .memory-date { font-size: 0.75rem; color: #888; }
-        .play-icon {
-            position: absolute; top: 15px; left: 15px;
-            background: rgba(0,0,0,0.6); color: #fff;
-            width: 30px; height: 30px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; display: none; /* 只有有音乐时才显示 */
-        }
-        .btn-delete {
-            position: absolute; top: 10px; right: 10px;
-            color: rgba(255,255,255,0.2); cursor: pointer; font-size: 14px;
-        }
+        .memory-date { font-size: 0.75rem; color: #888; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* 音乐图标 */
+        .music-badge { color: #666; font-size: 14px; transition: 0.3s; }
+        .playing .music-badge { color: #87cefa; animation: spin 2s linear infinite; } /* 播放时旋转 */
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .btn-delete { position: absolute; top: 10px; right: 10px; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 14px; z-index: 10; }
         .btn-delete:hover { color: #ff4d4d; }
 
-        /* --- 4. 底部控制栏 --- */
-        #control-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            height: 60px;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex; justify-content: center; align-items: center; gap: 50px;
-            z-index: 1000;
-        }
-        .ctrl-btn {
-            color: #aaa; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; transition: 0.3s;
-        }
+        /* --- 底部控制栏 --- */
+        #control-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; gap: 50px; z-index: 1000; }
+        .ctrl-btn { color: #aaa; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; transition: 0.3s; }
         .ctrl-btn i { font-size: 1.2rem; margin-bottom: 4px; }
         .ctrl-btn:hover { color: #87cefa; }
 
-        /* --- 5. 弹窗 --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 2000;
-            display: none; justify-content: center; align-items: center;
-        }
-        .modal-box {
-            background: #1a1a1a; width: 90%; max-width: 400px;
-            padding: 25px; border-radius: 15px; border: 1px solid #333;
-            color: #fff; position: relative;
-        }
+        /* --- 弹窗 --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #1a1a1a; width: 90%; max-width: 400px; padding: 25px; border-radius: 15px; border: 1px solid #333; color: #fff; position: relative; }
         .modal-close { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #666; }
         .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; color: #888; font-size: 0.9rem; }
-        .input-group input, .input-group textarea {
-            width: 100%; background: #333; border: 1px solid #444; color: #fff;
-            padding: 10px; border-radius: 5px; box-sizing: border-box; outline: none;
-        }
+        .input-group input, .input-group textarea { width: 100%; background: #333; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box; outline: none; }
         #preview-box img { max-width: 100%; max-height: 150px; border-radius: 5px; display: block; margin: 10px auto; }
-        .btn-submit {
-            width: 100%; background: #87cefa; color: #000; border: none; padding: 12px;
-            border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
-        .btn-submit:disabled { background: #555; color: #888; cursor: not-allowed; }
-
+        .btn-submit { width: 100%; background: #87cefa; color: #000; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -203,219 +96,85 @@
         <div id="left-panel">
             <div class="app-title">COSMIC LOVE</div>
             <div class="app-desc">
-                在这浩瀚宇宙中，<br>
-                每一颗星都是我们的回忆。<br>
-                (提示: 卡片可以随意拖拽哦)
+                浩瀚宇宙，星河璀璨。<br>
+                (提示: 点击卡片即可播放/暂停音乐)
             </div>
             <div class="timer-box">
                 <div class="timer-label">我们已经航行了</div>
                 <div id="timer-display">...</div>
             </div>
         </div>
-
         <div id="right-panel">
             <canvas id="meteor-canvas"></canvas>
             <div id="memory-layer"></div>
         </div>
-
         <div id="control-bar">
-            <div class="ctrl-btn" onclick="openModal()">
-                <i class="fas fa-plus-circle"></i> 添加
-            </div>
-            <div class="ctrl-btn" onclick="arrangeCards()">
-                <i class="fas fa-th-large"></i> 整理
-            </div>
-            <div class="ctrl-btn" onclick="scatterCards()">
-                <i class="fas fa-random"></i> 散落
-            </div>
+            <div class="ctrl-btn" onclick="openModal()"><i class="fas fa-plus-circle"></i> 添加</div>
+            <div class="ctrl-btn" onclick="arrangeCards()"><i class="fas fa-th-large"></i> 整理</div>
+            <div class="ctrl-btn" onclick="scatterCards()"><i class="fas fa-random"></i> 散落</div>
         </div>
     </div>
 
     <div class="modal-overlay" id="add-modal">
         <div class="modal-box">
             <span class="modal-close" onclick="closeModal()">&times;</span>
-            <h3 style="text-align:center; margin-top:0;">记录新发现</h3>
-            
+            <h3 style="text-align:center;">记录新发现</h3>
             <div class="input-group" style="border: 2px dashed #444; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('file-input').click()">
                 <p style="margin:0; color:#888;">点击选择照片</p>
                 <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileSelect(this)">
             </div>
             <div id="preview-box"></div>
-
+            <div class="input-group"><textarea id="input-content" rows="3" placeholder="写下这段回忆..."></textarea></div>
             <div class="input-group">
-                <textarea id="input-content" rows="3" placeholder="写下这段回忆..."></textarea>
-            </div>
-            <div class="input-group">
-                <input type="text" id="input-music" placeholder="背景音乐链接 (可选, .mp3)">
+                <input type="text" id="input-music" placeholder="音乐链接 (不填则使用默认钢琴曲)">
             </div>
             <button class="btn-submit" id="btn-pub" onclick="publish()">发布到宇宙</button>
         </div>
     </div>
 
     <script>
-        // =====================================================
-        // ✅ 配置区域 (已自动填入你的信息)
-        // =====================================================
         const CONFIG = {
             appId: 'gxw6RPvsW0eKgz0uvv7r78LF-MdYXbMMI',
             appKey: 'FAhjdMJ1gGA5WggHPqO5cBF8',
             serverURL: 'https://gxw6rpvs.api.lncldglobal.com',
-            startDate: '2023-05-20T13:14:00' // 在这里修改恋爱开始时间
+            startDate: '2023-05-20T13:14:00',
+            defaultMusic: 'https://music.163.com/song/media/outer/url?id=4875306.mp3' 
         };
 
-        // 初始化 LeanCloud
         AV.init({ appId: CONFIG.appId, appKey: CONFIG.appKey, serverURL: CONFIG.serverURL });
 
-        // =====================================================
-        // 🎬 1. 开场逻辑
-        // =====================================================
-        let count = 3;
-        const countdownEl = document.getElementById('intro-countdown');
-        const planetEl = document.getElementById('planet-container');
-        const hintEl = document.getElementById('click-hint');
+        // --- 音乐播放逻辑 (点击版) ---
+        const player = document.getElementById('bgm-player');
+        let currentPlayingCard = null; // 记录当前哪张卡片在响
+        
+        function toggleMusic(url, cardEl) {
+            if (!url) return;
 
-        // 启动倒计时
-        const timer = setInterval(() => {
-            countdownEl.innerText = `宇宙链接中... ${count}`;
-            count--;
-            if (count < 0) {
-                clearInterval(timer);
-                countdownEl.style.display = 'none';
-                initThreeJSPlanet(); // 初始化3D星球
-                planetEl.style.display = 'block';
-                hintEl.style.display = 'block';
+            // 情况1: 点击正在播放的卡片 -> 暂停
+            if (currentPlayingCard === cardEl) {
+                player.pause();
+                cardEl.classList.remove('playing');
+                currentPlayingCard = null;
+                return;
             }
-        }, 1000);
 
-        // 3D 星球渲染
-        function initThreeJSPlanet() {
-            const width = 300;
-            const height = 300;
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(width, height);
-            planetEl.appendChild(renderer.domElement);
-
-            // 创建球体
-            const geometry = new THREE.SphereGeometry(5, 32, 32);
-            // 使用更漂亮的纹理加载器，或者使用颜色
-            const material = new THREE.MeshPhongMaterial({ 
-                color: 0x2a75bb, // 蓝色星球
-                emissive: 0x112244,
-                specular: 0x111111,
-                shininess: 30,
-                wireframe: false
-            }); 
-            const sphere = new THREE.Mesh(geometry, material);
-            scene.add(sphere);
-
-            // 光照
-            const light = new THREE.DirectionalLight(0xffffff, 1.5);
-            light.position.set(10, 10, 10);
-            scene.add(light);
-            const ambient = new THREE.AmbientLight(0x404040);
-            scene.add(ambient);
-
-            camera.position.z = 15;
-
-            function animate() {
-                requestAnimationFrame(animate);
-                sphere.rotation.y += 0.01; // 自转
-                sphere.rotation.x += 0.005;
-                renderer.render(scene, camera);
+            // 情况2: 点击新卡片 -> 停止旧的，播新的
+            if (currentPlayingCard) {
+                currentPlayingCard.classList.remove('playing');
             }
-            animate();
+
+            player.src = url;
+            player.volume = 0.6;
+            player.play().then(() => {
+                cardEl.classList.add('playing');
+                currentPlayingCard = cardEl;
+            }).catch(e => console.log("播放失败", e));
         }
 
-        // 点击星球进入
-        planetEl.addEventListener('click', () => {
-            document.getElementById('intro-screen').style.opacity = 0;
-            setTimeout(() => {
-                document.getElementById('intro-screen').style.display = 'none';
-                document.getElementById('main-app').classList.add('active');
-                resizeCanvas(); // 修正流星画布尺寸
-                loadMemories(); // 加载数据
-            }, 1000);
-        });
-
-        // =====================================================
-        // 🌠 2. 流星系统 (修复方向与出现位置)
-        // =====================================================
-        const canvas = document.getElementById('meteor-canvas');
-        const ctx = canvas.getContext('2d');
-        let meteors = [];
-
-        function resizeCanvas() {
-            canvas.width = document.getElementById('right-panel').offsetWidth;
-            canvas.height = document.getElementById('right-panel').offsetHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-
-        class Meteor {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                // 核心修复：从屏幕左侧(-100px)到屏幕中间随机宽度出现
-                this.x = Math.random() * canvas.width * 0.5 - 100; 
-                // 从屏幕顶部(-100px)到屏幕中间随机高度
-                this.y = Math.random() * canvas.height * 0.5 - 100;
-                
-                this.len = Math.random() * 80 + 50;
-                this.speed = Math.random() * 4 + 2;
-                this.size = Math.random() * 2 + 0.5;
-                // 角度固定为右下方 (45度)
-                this.angle = Math.PI / 4; 
-            }
-            update() {
-                this.x += this.speed * Math.cos(this.angle);
-                this.y += this.speed * Math.sin(this.angle);
-
-                // 边界检查：如果跑出右边或下边太远，重置
-                if (this.x > canvas.width + 100 || this.y > canvas.height + 100) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                
-                // 画流星头
-                const gradient = ctx.createLinearGradient(0, 0, -this.len, 0);
-                gradient.addColorStop(0, "rgba(255,255,255,1)");
-                gradient.addColorStop(1, "rgba(255,255,255,0)");
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(-this.len, -1);
-                ctx.lineTo(-this.len, 1);
-                ctx.fill();
-                
-                ctx.restore();
-            }
-        }
-
-        function loopMeteors() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            meteors.forEach(m => { m.update(); m.draw(); });
-            requestAnimationFrame(loopMeteors);
-        }
-
-        // 创建流星
-        for(let i=0; i<20; i++) meteors.push(new Meteor());
-        loopMeteors();
-
-
-        // =====================================================
-        // 💾 3. 数据与卡片逻辑 (LeanCloud + 拖拽)
-        // =====================================================
+        // --- 卡片创建逻辑 ---
         const memoryLayer = document.getElementById('memory-layer');
-        let zIndexCounter = 10; // 用于层级控制
+        let zIndexCounter = 10;
 
-        // 加载回忆
         async function loadMemories() {
             const query = new AV.Query('Memory');
             query.descending('createdAt');
@@ -423,213 +182,184 @@
             try {
                 const list = await query.find();
                 memoryLayer.innerHTML = '';
-                list.forEach((item, index) => {
-                    createCard(item, index);
-                });
-                scatterCards(); // 默认随机散落
-            } catch (err) {
-                console.error(err);
-            }
+                list.forEach(item => createCard(item));
+                scatterCards();
+            } catch (err) { console.error(err); }
         }
 
-        // 创建单个卡片 DOM
-        function createCard(item, index) {
+        function createCard(item) {
             const data = item.attributes;
             const div = document.createElement('div');
             div.className = 'memory-card';
             div.id = 'card-' + item.id;
+            const musicUrl = data.musicUrl || CONFIG.defaultMusic;
             
-            // 初始化随机位置
-            div.style.left = '50px';
-            div.style.top = '50px';
-
-            // 音乐图标
-            const musicIcon = data.musicUrl ? `<div class="play-icon" onclick="toggleMusic('${data.musicUrl}', this)"><i class="fas fa-music"></i></div>` : '';
-            
-            // 图片
-            const imgHtml = data.imgUrl ? `<img src="${data.imgUrl}" draggable="false">` : '';
-
-            div.innerHTML = `
-                ${musicIcon}
-                <div class="btn-delete" onclick="deleteMemory('${item.id}')"><i class="fas fa-times"></i></div>
-                ${imgHtml}
-                <div class="memory-text">${data.content || ''}</div>
-                <div class="memory-date">${item.createdAt.toLocaleDateString()}</div>
-            `;
-
-            // 绑定拖拽事件
-            setupDrag(div);
-            
-            // 鼠标按下提升层级
-            div.addEventListener('mousedown', () => {
+            // 点击置顶 + 处理播放逻辑
+            // 我们需要判断是“拖拽”还是“点击”
+            // 逻辑：mousedown 时记录位置，mouseup 时如果移动距离很小，则视为点击
+            let startX, startY;
+            div.addEventListener('mousedown', (e) => {
                 div.style.zIndex = ++zIndexCounter;
+                startX = e.clientX;
+                startY = e.clientY;
             });
 
+            div.addEventListener('mouseup', (e) => {
+                const diffX = Math.abs(e.clientX - startX);
+                const diffY = Math.abs(e.clientY - startY);
+                // 移动小于5像素，认为是点击
+                if (diffX < 5 && diffY < 5) {
+                    // 只有点的不是删除按钮才播放
+                    if(!e.target.closest('.btn-delete')) {
+                        toggleMusic(musicUrl, div);
+                    }
+                }
+            });
+
+            const imgHtml = data.imgUrl ? `<img src="${data.imgUrl}" draggable="false">` : '';
+            
+            div.innerHTML = `
+                <div class="btn-delete" onclick="deleteMemory('${item.id}', event)"><i class="fas fa-times"></i></div>
+                ${imgHtml}
+                <div class="memory-text">${data.content || ''}</div>
+                <div class="memory-date">
+                    <span>${item.createdAt.toLocaleDateString()}</span>
+                    <div class="music-badge"><i class="fas fa-compact-disc"></i></div>
+                </div>
+            `;
+            
+            setupDrag(div);
             memoryLayer.appendChild(div);
         }
 
-        // 拖拽逻辑核心
+        // --- 拖拽逻辑 (独立封装) ---
         function setupDrag(el) {
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
-
+            let isDragging = false, initialLeft, initialTop, dragStartX, dragStartY;
             el.addEventListener('mousedown', (e) => {
-                // 如果点的是删除按钮或播放按钮，不拖拽
-                if(e.target.closest('.btn-delete') || e.target.closest('.play-icon')) return;
-                
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                initialLeft = el.offsetLeft;
+                if(e.target.closest('.btn-delete')) return;
+                isDragging = true; 
+                dragStartX = e.clientX; 
+                dragStartY = e.clientY;
+                initialLeft = el.offsetLeft; 
                 initialTop = el.offsetTop;
                 el.style.cursor = 'grabbing';
             });
-
             window.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-                el.style.left = `${initialLeft + dx}px`;
-                el.style.top = `${initialTop + dy}px`;
+                el.style.left = `${initialLeft + (e.clientX - dragStartX)}px`;
+                el.style.top = `${initialTop + (e.clientY - dragStartY)}px`;
             });
-
-            window.addEventListener('mouseup', () => {
-                isDragging = false;
-                el.style.cursor = 'grab';
-            });
+            window.addEventListener('mouseup', () => { isDragging = false; el.style.cursor = 'grab'; });
         }
 
-        // 随机散落布局
+        // --- 布局 ---
         function scatterCards() {
             const cards = document.querySelectorAll('.memory-card');
-            const containerW = document.getElementById('right-panel').offsetWidth;
-            const containerH = document.getElementById('right-panel').offsetHeight;
-
+            const W = document.getElementById('right-panel').offsetWidth;
+            const H = document.getElementById('right-panel').offsetHeight;
             cards.forEach(card => {
-                const x = Math.random() * (containerW - 300);
-                const y = Math.random() * (containerH - 200);
-                const rotate = (Math.random() - 0.5) * 20; // -10 ~ 10度旋转
-                
-                card.style.left = Math.max(0, x) + 'px';
-                card.style.top = Math.max(0, y) + 'px';
-                card.style.transform = `rotate(${rotate}deg)`;
+                card.style.left = Math.max(0, Math.random() * (W - 300)) + 'px';
+                card.style.top = Math.max(0, Math.random() * (H - 200)) + 'px';
+                card.style.transform = `rotate(${(Math.random()-0.5)*20}deg)`;
             });
         }
-
-        // 整理布局 (网格)
         function arrangeCards() {
             const cards = document.querySelectorAll('.memory-card');
             let x = 20, y = 20;
             cards.forEach(card => {
-                card.style.transform = `rotate(0deg)`;
-                card.style.left = x + 'px';
-                card.style.top = y + 'px';
-                
-                x += 280; // 卡片宽+间距
-                if(x > document.getElementById('right-panel').offsetWidth - 280) {
-                    x = 20;
-                    y += 300; // 换行
-                }
+                card.style.transform = `rotate(0deg)`; card.style.left = x+'px'; card.style.top = y+'px';
+                x += 280; if(x > document.getElementById('right-panel').offsetWidth - 280) { x = 20; y += 300; }
             });
         }
 
-        // =====================================================
-        // 🎵 音乐控制
-        // =====================================================
-        const player = document.getElementById('bgm-player');
-        let currentBtn = null;
-
-        function toggleMusic(url, btn) {
-            // 停止之前的动画
-            if (currentBtn) currentBtn.querySelector('i').classList.remove('fa-spin');
-
-            if (player.src === url && !player.paused) {
-                player.pause();
-                currentBtn = null;
-            } else {
-                player.src = url;
-                player.play();
-                currentBtn = btn;
-                btn.querySelector('i').classList.add('fa-spin'); // 旋转图标
-            }
-        }
-
-        // =====================================================
-        // 🛠️ 发布与删除
-        // =====================================================
+        // --- 发布与删除 ---
         let selectedFile = null;
-
         function openModal() { document.getElementById('add-modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
-
         function handleFileSelect(input) {
             if (input.files && input.files[0]) {
                 selectedFile = input.files[0];
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('preview-box').innerHTML = `<img src="${e.target.result}">`;
-                }
-                reader.readAsDataURL(selectedFile);
+                const r = new FileReader();
+                r.onload = (e) => document.getElementById('preview-box').innerHTML = `<img src="${e.target.result}">`;
+                r.readAsDataURL(selectedFile);
             }
         }
-
         async function publish() {
             const text = document.getElementById('input-content').value;
             const music = document.getElementById('input-music').value;
             const btn = document.getElementById('btn-pub');
-
-            if(!text && !selectedFile) return alert("请至少写点什么或传张图");
-
-            btn.disabled = true;
-            btn.innerText = "上传中...";
-
+            if(!text && !selectedFile) return alert("请写点什么");
+            btn.disabled = true; btn.innerText = "上传中...";
             try {
                 let imgUrl = "";
                 if (selectedFile) {
                     const f = new AV.File(selectedFile.name, selectedFile);
-                    await f.save();
-                    imgUrl = f.url();
+                    await f.save(); imgUrl = f.url();
                 }
-
-                const Memory = AV.Object.extend('Memory');
-                const m = new Memory();
-                m.set('content', text);
-                m.set('imgUrl', imgUrl);
-                m.set('musicUrl', music);
+                const M = AV.Object.extend('Memory'); const m = new M();
+                m.set('content', text); m.set('imgUrl', imgUrl); m.set('musicUrl', music);
                 await m.save();
-
-                closeModal();
-                loadMemories(); // 刷新显示
-                // 重置表单
-                document.getElementById('input-content').value = '';
-                document.getElementById('preview-box').innerHTML = '';
-                selectedFile = null;
+                closeModal(); loadMemories();
+                document.getElementById('input-content').value = ''; document.getElementById('preview-box').innerHTML = ''; selectedFile = null;
                 alert("发布成功！");
-            } catch (error) {
-                alert("发布失败: " + error.message);
-            }
-            btn.disabled = false;
-            btn.innerText = "发布到宇宙";
+            } catch (e) { alert("发布失败: " + e.message); }
+            btn.disabled = false; btn.innerText = "发布到宇宙";
         }
-
-        async function deleteMemory(id) {
-            if(!confirm("确定让这条回忆消失在黑洞中吗？")) return;
-            const o = AV.Object.createWithoutData('Memory', id);
-            await o.destroy();
+        async function deleteMemory(id, e) {
+            e.stopPropagation(); if(!confirm("删除这条回忆？")) return;
+            const o = AV.Object.createWithoutData('Memory', id); await o.destroy();
             document.getElementById('card-' + id).remove();
         }
 
-        // 计时器
-        const start = new Date(CONFIG.startDate);
-        setInterval(() => {
-            const diff = new Date() - start;
-            const d = Math.floor(diff / 86400000);
-            const h = Math.floor((diff / 3600000) % 24);
-            const m = Math.floor((diff / 60000) % 60);
-            const s = Math.floor((diff / 1000) % 60);
-            document.getElementById('timer-display').innerText = `${d}天 ${h}时 ${m}分 ${s}秒`;
+        // --- 倒计时与星球 ---
+        let count = 3;
+        const cd = document.getElementById('intro-countdown');
+        const pl = document.getElementById('planet-container');
+        const tm = setInterval(() => {
+            cd.innerText = `宇宙链接中... ${count}`; count--;
+            if (count < 0) { clearInterval(tm); cd.style.display = 'none'; initPlanet(); pl.style.display = 'block'; document.getElementById('click-hint').style.display='block'; }
         }, 1000);
 
+        function initPlanet() {
+            const w=300, h=300; const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(50, w/h, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(w, h); pl.appendChild(renderer.domElement);
+            const geo = new THREE.SphereGeometry(5, 32, 32);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x2a75bb, emissive: 0x112244, specular: 0x111111, shininess: 30 });
+            const sphere = new THREE.Mesh(geo, mat); scene.add(sphere);
+            const l1 = new THREE.DirectionalLight(0xffffff, 1.5); l1.position.set(10,10,10); scene.add(l1);
+            scene.add(new THREE.AmbientLight(0x404040));
+            camera.position.z = 15;
+            function animate() { requestAnimationFrame(animate); sphere.rotation.y += 0.01; sphere.rotation.x += 0.005; renderer.render(scene, camera); }
+            animate();
+        }
+        pl.addEventListener('click', () => {
+            document.getElementById('intro-screen').style.opacity = 0;
+            setTimeout(() => { document.getElementById('intro-screen').style.display = 'none'; document.getElementById('main-app').classList.add('active'); resizeCanvas(); loadMemories(); }, 1000);
+        });
+
+        // --- 流星 ---
+        const cvs = document.getElementById('meteor-canvas'); const ctx = cvs.getContext('2d');
+        let mets = [];
+        function resizeCanvas() { cvs.width = document.getElementById('right-panel').offsetWidth; cvs.height = document.getElementById('right-panel').offsetHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        class Met {
+            constructor() { this.reset(); }
+            reset() { this.x = Math.random()*cvs.width*0.5 - 100; this.y = Math.random()*cvs.height*0.5 - 100; this.len = Math.random()*80+50; this.speed = Math.random()*4+2; this.angle = Math.PI/4; }
+            update() { this.x += this.speed*Math.cos(this.angle); this.y += this.speed*Math.sin(this.angle); if(this.x>cvs.width+100 || this.y>cvs.height+100) this.reset(); }
+            draw() { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); const g = ctx.createLinearGradient(0,0,-this.len,0); g.addColorStop(0,"rgba(255,255,255,1)"); g.addColorStop(1,"rgba(255,255,255,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-this.len,-1); ctx.lineTo(-this.len,1); ctx.fill(); ctx.restore(); }
+        }
+        for(let i=0;i<20;i++) mets.push(new Met());
+        function loop() { ctx.clearRect(0,0,cvs.width,cvs.height); mets.forEach(m=>{m.update();m.draw();}); requestAnimationFrame(loop); }
+        loop();
+        
+        // --- 计时器 ---
+        setInterval(() => {
+            const diff = new Date() - new Date(CONFIG.startDate);
+            const d=Math.floor(diff/86400000), h=Math.floor((diff/3600000)%24), m=Math.floor((diff/60000)%60), s=Math.floor((diff/1000)%60);
+            document.getElementById('timer-display').innerText = `${d}天 ${h}时 ${m}分 ${s}秒`;
+        }, 1000);
     </script>
 </body>
 </html>
