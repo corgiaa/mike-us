@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的爱 | Our Love Story</title>
+    <style>
+        /* --- 1. 全局样式 --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); /* 温暖的渐变色 */
+            font-family: 'Microsoft YaHei', sans-serif;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- 2. 浮动爱心背景动画 --- */
+        .hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 让点击穿透，不影响操作 */
+            z-index: 0;
+        }
+        .heart {
+            position: absolute;
+            bottom: -20px;
+            color: rgba(255, 255, 255, 0.6);
+            animation: floatUp 10s linear infinite;
+            font-size: 20px;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- 3. 内容容器 --- */
+        .container {
+            z-index: 1;
+            text-align: center;
+            margin-top: 50px;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        /* --- 4. 计时器样式 --- */
+        .timer-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            animation: breathe 3s ease-in-out infinite; /* 呼吸浮动效果 */
+        }
+        .timer-title {
+            font-size: 1.2rem;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+        #timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #444;
+        }
+
+        /* --- 5. 照片与文字样式 --- */
+        .photo-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transform: translateY(0);
+            transition: transform 0.3s;
+        }
+        .photo-card:hover {
+            transform: translateY(-10px); /* 鼠标悬停上浮 */
+        }
+        .photo-card img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+        .photo-text {
+            margin-top: 15px;
+            line-height: 1.6;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hearts" id="heartsContainer"></div>
+
+    <div class="container">
+        <div class="timer-box">
+            <div class="timer-title">我们要一起走过</div>
+            <div id="timer">计算中...</div>
+        </div>
+
+        <div class="photo-card">
+            <img src="DSC_1894.JPG" alt="我们的合照">
+            <div class="photo-text">
+                这是我们在海边的那次旅行。<br>
+                记得那时候风很大，但你的手很暖。
+            </div>
+        </div>
+
+        <div class="photo-card">
+            <img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=600&auto=format&fit=crop" alt="牵手">
+            <div class="photo-text">
+                简单的幸福，就是和你一起吃顿饭，散散步。<br>
+                未来的每一天，都要有你。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 配置你的恋爱起始日期 ---
+        // 格式: "YYYY-MM-DDTHH:mm:ss" (例如: 2023年5月20日 13:14:00)
+        const startDate = new Date("2023-05-20T13:14:00");
+
+        // --- 2. 计时器逻辑 ---
+        function updateTimer() {
+            const now = new Date();
+            const diff = now - startDate; // 毫秒差
+
+            if (diff < 0) {
+                document.getElementById("timer").innerText = "时间还没开始呢！";
+                return;
+            }
+
+            // 计算时间单位
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            document.getElementById("timer").innerHTML = 
+                `${days} <span style="font-size:0.8em">天</span> 
+                 ${hours} <span style="font-size:0.8em">小时</span> 
+                 ${minutes} <span style="font-size:0.8em">分</span> 
+                 ${seconds} <span style="font-size:0.8em">秒</span>`;
+        }
+
+        setInterval(updateTimer, 1000); // 每秒刷新一次
+        updateTimer(); // 立即执行一次
+
+        // --- 3. 生成背景浮动爱心 ---
+        function createHearts() {
+            const container = document.getElementById('heartsContainer');
+            for (let i = 0; i < 15; i++) { // 生成15个爱心
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.innerHTML = '❤';
+                heart.style.left = Math.random() * 100 + 'vw'; // 随机水平位置
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's'; // 随机速度 5-10秒
+                heart.style.fontSize = (Math.random() * 20 + 10) + 'px'; // 随机大小
+                heart.style.animationDelay = Math.random() * 5 + 's'; // 随机延迟
+                container.appendChild(heart);
+            }
+        }
+        createHearts();
+    </script>
+</body>
+</html>
