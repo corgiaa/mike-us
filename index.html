@@ -3,444 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星辰之恋 | Our Stellar Love</title>
+    <title>我们的专属回忆 | Our Memory</title>
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <style>
-        /* --- 全局样式 & 星空背景 --- */
+        /* --- 基础样式 --- */
         body {
             margin: 0;
             padding: 0;
-            background: #000; /* 纯黑背景作为星空基础 */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #eee;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #444;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-x: hidden;
-            position: relative;
-            background: linear-gradient(to bottom, #0a1128 0%, #000 100%); /* 深蓝到黑的渐变 */
         }
 
-        /* --- 星星动画 --- */
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .star {
-            position: absolute;
-            background: #fff;
-            border-radius: 50%;
-            animation: twinkle 5s infinite alternate, floatStars 100s linear infinite;
-        }
-
-        @keyframes twinkle {
-            0% { opacity: 0.5; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        @keyframes floatStars {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-2000px); } /* 向上漂浮 */
-        }
-
-
-        /* --- 内容容器 --- */
         .container {
-            z-index: 1; /* 确保内容在星星上面 */
-            text-align: center;
-            margin-top: 50px;
             width: 90%;
-            max-width: 800px; /* 增加最大宽度 */
-            padding: 20px;
-            box-sizing: border-box;
-            background: rgba(0, 0, 0, 0.4); /* 半透明背景，略微遮挡星空 */
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); /* 淡淡的蓝绿色发光 */
-            backdrop-filter: blur(5px); /* 背景模糊效果 */
-            margin-bottom: 50px; /* 底部留白 */
-        }
-
-        /* --- 计时器样式 --- */
-        .timer-box {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-        }
-        .timer-title {
-            font-size: 1.5rem;
-            color: #8affff; /* 亮青色 */
-            margin-bottom: 15px;
-            text-shadow: 0 0 5px #00ffff;
-        }
-        #timer {
-            font-size: 2.2rem; /* 增大字体 */
-            font-weight: bold;
-            color: #00ffff; /* 亮青色 */
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px #00ffff;
-        }
-
-        /* --- 照片网格布局 --- */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* 响应式网格 */
-            gap: 30px; /* 网格间距 */
+            max-width: 600px;
             margin-top: 40px;
+            margin-bottom: 60px;
         }
 
-        /* --- 星球照片卡片样式 --- */
-        .planet-card {
-            background: rgba(255, 255, 255, 0.08); /* 略透明 */
+        /* --- 标题与计时器 --- */
+        .header { text-align: center; margin-bottom: 40px; }
+        .title { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .timer { font-size: 1rem; color: #888; letter-spacing: 1px; }
+
+        /* --- 发布框 (支持拖拽) --- */
+        .upload-box {
+            background: #fff;
             padding: 20px;
-            border-radius: 50%; /* 圆形卡片 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1 / 1; /* 保持宽高比 */
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5); /* 强烈的光晕效果 */
-            border: 2px solid rgba(0, 255, 255, 0.4);
-            transition: transform 0.5s ease, box-shadow 0.5s ease;
-            position: relative;
-            overflow: hidden; /* 隐藏超出星球边缘的部分 */
-        }
-        .planet-card:hover {
-            transform: scale(1.05) rotate(5deg); /* 悬停轻微放大旋转 */
-            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(135, 206, 250, 0.5); /* 更强的光晕 */
-        }
-        .planet-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 裁剪图片以适应圆形 */
-            border-radius: 50%; /* 确保图片也是圆形 */
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); /* 内部阴影，增加立体感 */
-        }
-        .planet-description {
-            position: absolute;
-            bottom: -5px; /* 描述文字位置调整 */
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 0.9rem;
-            max-width: 90%;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            text-align: center;
-            white-space: pre-wrap; /* 允许换行 */
-        }
-        .planet-card:hover .planet-description {
-            opacity: 1;
-        }
-
-
-        /* --- 上传区域样式 (本地预览) --- */
-        .upload-section {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            margin-top: 50px;
-            border: 1px dashed rgba(0, 255, 255, 0.4);
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-            text-align: center;
-            color: #8affff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+            transition: all 0.3s;
         }
         .upload-area {
-            border: 2px dashed #00ffff; /* 虚线边框 */
+            border: 2px dashed #ddd;
             border-radius: 10px;
-            padding: 40px 20px;
-            margin-bottom: 20px;
+            padding: 30px 20px;
+            text-align: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            position: relative;
+            margin-bottom: 15px;
+            color: #aaa;
+            transition: 0.3s;
         }
-        .upload-area.highlight {
-            background-color: rgba(0, 255, 255, 0.1);
-            border-color: #00ffff;
-        }
-        .upload-area p {
-            font-size: 1.1rem;
-            margin: 0;
-        }
-        .upload-area input[type="file"] {
-            position: absolute;
+        .upload-area:hover, .upload-area.dragover { border-color: #ff9a9e; background: #fff0f0; color: #ff6b6b; }
+        
+        textarea {
             width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
+            border: none;
+            resize: none;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            margin-bottom: 10px;
+            background: transparent;
         }
 
-        #preview-images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-        .preview-item {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 2px solid #00ffff;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
-        .preview-item img {
+        .btn-publish {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .preview-item button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255, 0, 0, 0.7);
+            background: #ff9a9e;
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            line-height: 25px;
-            text-align: center;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .upload-buttons {
-            margin-top: 25px;
-        }
-        .upload-buttons button {
-            background-color: #00ffff;
-            color: #0a1128;
-            border: none;
-            padding: 12px 25px;
+            padding: 12px;
             border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
-            margin: 0 10px;
+            font-weight: bold;
+            transition: 0.3s;
         }
-        .upload-buttons button:hover {
-            background-color: #00e6e6;
-            transform: translateY(-3px);
+        .btn-publish:hover { background: #ff6b6b; transform: translateY(-2px); }
+        .btn-publish:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* --- 回忆列表 --- */
+        .memory-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+            position: relative;
+            animation: fadeIn 0.5s ease;
         }
-        .upload-buttons a {
-            color: #00ffff;
-            text-decoration: none;
-            margin-left: 20px;
-            font-size: 0.95rem;
-            transition: color 0.3s;
+        .memory-date { font-size: 0.8rem; color: #bbb; margin-bottom: 10px; }
+        .memory-text { font-size: 1rem; line-height: 1.6; color: #333; white-space: pre-wrap; }
+        .memory-img { 
+            width: 100%; 
+            border-radius: 10px; 
+            margin-top: 15px; 
+            display: block; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .upload-buttons a:hover {
-            color: #8affff;
+        .btn-delete {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ddd;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
+        .btn-delete:hover { color: red; }
+
+        /* --- Loading 状态 --- */
+        #preview-container { margin-bottom: 15px; display: none; }
+        #preview-img { max-width: 100px; border-radius: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="stars" id="starsContainer"></div>
-
     <div class="container">
-        <div class="timer-box">
-            <div class="timer-title">我们的星辰之旅已开启</div>
-            <div id="timer">计算中...</div>
+        <div class="header">
+            <div class="title">我们的时光胶囊</div>
+            <div class="timer" id="timer">我们已经相爱了...</div>
         </div>
 
-        <div class="photo-grid" id="photoGrid">
-            <div class="planet-card">
-                <img src="https://images.unsplash.com/photo-1542845181-fc05d5c0b05b?q=80&w=300&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGNvdXBsZXxlbnwwfHwwfHx8MA%3D%3D" alt="我们的星球1">
-                <div class="planet-description">
-                    我们的第一个旅行星球，充满阳光和海风。
-                </div>
+        <div class="upload-box">
+            <textarea id="input-text" rows="3" placeholder="此刻你在想什么..."></textarea>
+            
+            <div class="upload-area" id="drop-area">
+                <p>点击或拖拽照片到这里</p>
+                <input type="file" id="file-input" accept="image/*" style="display:none">
             </div>
-            <div class="planet-card">
-                <img src="https://images.unsplash.com/photo-1596205739347-1bb48011f008?q=80&w=300&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTQwfHxjb3VwbGV8ZW58MHx8MHx8fDA%3D" alt="我们的星球2">
-                <div class="planet-description">
-                    在这个安静的星球上，我们分享了无数个秘密。
-                </div>
-            </div>
+            
+            <div id="preview-container">
+                <img id="preview-img" src="">
+                <span style="font-size:12px; color:#888; margin-left:10px;">已选择图片</span>
             </div>
 
-        <div class="upload-section">
-            <div class="upload-area" id="uploadArea">
-                <input type="file" id="imageUpload" multiple accept="image/*">
-                <p>将照片拖拽到这里，或点击选择文件</p>
-                <p style="font-size:0.85rem; margin-top:10px;">(此为本地预览，不会永久保存哦)</p>
-            </div>
-            <div id="preview-images">
-                </div>
-            <div class="upload-buttons">
-                <button onclick="addPreviewImagesToGrid()">将预览照片添加到网站</button>
-                <a href="https://imgbb.com/" target="_blank">前往免费图床上传照片 (获取链接)</a>
-            </div>
+            <button class="btn-publish" id="btn-submit" onclick="publish()">发布回忆</button>
         </div>
 
+        <div id="memory-list">
+            <p style="text-align:center; color:#ccc;">正在连接云端回忆...</p>
+        </div>
     </div>
 
     <script>
-        // --- 1. 配置你的恋爱起始日期 ---
-        // 格式: "YYYY-MM-DDTHH:mm:ss" (例如: 2023年5月20日 13:14:00)
-        const startDate = new Date("2023-05-20T13:14:00");
+        // ==========================================
+        // 👇👇👇 请在这里填入你的 LeanCloud Key 👇👇👇
+        // ==========================================
+        const APP_ID = 'gxw6RPvsW0eKgz0uvv7r78LF-MdYXbMMI';   // 例如: 8xK2...
+        const APP_KEY = 'FAhjdMJ1gGA5WggHPqO5cBF8'; // 例如: B73s...
+        // ==========================================
 
-        // --- 2. 计时器逻辑 ---
-        function updateTimer() {
-            const now = new Date();
-            const diff = now - startDate; // 毫秒差
+        if (APP_ID === '你的APP_ID') alert("请先在代码里填入 AppID 和 AppKey 哦！");
+        
+        // 初始化
+        AV.init({ appId: APP_ID, appKey: APP_KEY });
 
-            if (diff < 0) {
-                document.getElementById("timer").innerText = "等待星辰汇聚...";
-                return;
-            }
+        // 1. 恋爱计时器
+        const startDate = new Date("2023-05-20T13:14:00"); // 修改这里的日期
+        setInterval(() => {
+            const diff = new Date() - startDate;
+            const days = Math.floor(diff / (86400000));
+            const hours = Math.floor((diff / 3600000) % 24);
+            const minutes = Math.floor((diff / 60000) % 60);
+            document.getElementById('timer').innerText = `我们已经相爱了 ${days} 天 ${hours} 小时 ${minutes} 分钟`;
+        }, 1000);
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const minutes = Math.floor((diff / (1000 * 60)) % 60);
-            const seconds = Math.floor((diff / 1000) % 60);
+        // 2. 拖拽与文件选择逻辑
+        let selectedFile = null;
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
 
-            document.getElementById("timer").innerHTML =
-                `${days} <span style="font-size:0.7em">天</span>
-                 ${hours} <span style="font-size:0.7em">小时</span>
-                 ${minutes} <span style="font-size:0.7em">分</span>
-                 ${seconds} <span style="font-size:0.7em">秒</span>`;
-        }
-        setInterval(updateTimer, 1000);
-        updateTimer();
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
-        // --- 3. 星星背景动画生成 ---
-        const starsContainer = document.getElementById('starsContainer');
-        function createStars() {
-            for (let i = 0; i < 150; i++) { // 生成150颗星星
-                const star = document.createElement('div');
-                star.classList.add('star');
-                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px'; // 1-4px
-                star.style.left = Math.random() * 100 + 'vw';
-                star.style.top = Math.random() * 100 + 'vh';
-                star.style.animationDelay = (Math.random() * -100) + 's'; // 负延迟让星星一开始就分散
-                star.style.animationDuration = (Math.random() * 80 + 120) + 's'; // 80-200s 漂浮速度
-                starsContainer.appendChild(star);
-            }
-        }
-        createStars();
-
-
-        // --- 4. 图片上传本地预览逻辑 ---
-        const uploadArea = document.getElementById('uploadArea');
-        const imageUpload = document.getElementById('imageUpload');
-        const previewImagesContainer = document.getElementById('preview-images');
-        let currentPreviewFiles = []; // 存储当前预览的图片文件
-
-        // 阻止默认拖拽行为
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false); // 防止拖拽到浏览器其他地方
+            dropArea.addEventListener(eventName, preventDefaults, false);
         });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
 
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        ['dragenter', 'dragover'].forEach(name => dropArea.addEventListener(name, () => dropArea.classList.add('dragover')));
+        ['dragleave', 'drop'].forEach(name => dropArea.addEventListener(name, () => dropArea.classList.remove('dragover')));
+
+        dropArea.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            selectedFile = file;
+            // 本地预览
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('preview-img').src = e.target.result;
+                document.getElementById('preview-container').style.display = 'block';
+                document.getElementById('drop-area').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
         }
 
-        // 拖拽进入和离开时的样式变化
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('highlight'), false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('highlight'), false);
-        });
+        // 3. 发布功能 (核心)
+        async function publish() {
+            const text = document.getElementById('input-text').value;
+            const btn = document.getElementById('btn-submit');
 
-        // 处理文件拖放
-        uploadArea.addEventListener('drop', handleDrop, false);
+            if (!text && !selectedFile) return alert("写点字或者发张图吧！");
 
-        function handleDrop(e) {
-            let dt = e.dataTransfer;
-            let files = dt.files;
-            handleFiles(files);
-        }
+            btn.innerText = "正在上传...";
+            btn.disabled = true;
 
-        // 处理文件选择 (通过点击或拖拽)
-        imageUpload.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
+            try {
+                let imgUrl = "";
+                
+                // 如果有图片，先上传图片到 LeanCloud
+                if (selectedFile) {
+                    const avFile = new AV.File(selectedFile.name, selectedFile);
+                    await avFile.save(); // 上传文件
+                    imgUrl = avFile.url(); // 获取云端地址
+                }
 
-        function handleFiles(files) {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (!file.type.startsWith('image/')) continue; // 只处理图片文件
+                // 保存数据到 'Memory' 表
+                const Memory = AV.Object.extend('Memory');
+                const memory = new Memory();
+                memory.set('content', text);
+                memory.set('imgUrl', imgUrl);
+                await memory.save();
 
-                currentPreviewFiles.push(file); // 添加到预览文件数组
+                // 重置界面
+                alert("发布成功！");
+                location.reload(); // 刷新页面看效果
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewItem = document.createElement('div');
-                    previewItem.classList.add('preview-item');
-                    previewItem.innerHTML = `
-                        <img src="${e.target.result}" alt="预览">
-                        <button onclick="removePreview(this, '${file.name}')">X</button>
-                    `;
-                    previewImagesContainer.appendChild(previewItem);
-                };
-                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error(error);
+                alert("发布失败，请检查网络或 Key 是否正确。\n错误信息: " + error.message);
+                btn.innerText = "发布回忆";
+                btn.disabled = false;
             }
         }
 
-        // 移除预览图片
-        function removePreview(button, fileName) {
-            button.closest('.preview-item').remove();
-            currentPreviewFiles = currentPreviewFiles.filter(file => file.name !== fileName);
-        }
+        // 4. 读取列表
+        async function loadMemories() {
+            const query = new AV.Query('Memory');
+            query.descending('createdAt'); // 最新在最前
+            try {
+                const list = await query.find();
+                const container = document.getElementById('memory-list');
+                container.innerHTML = '';
 
-        // 将预览图片添加到主网格
-        function addPreviewImagesToGrid() {
-            if (currentPreviewFiles.length === 0) {
-                alert('请先选择或拖拽图片进行预览。');
-                return;
-            }
-
-            const photoGrid = document.getElementById('photoGrid');
-
-            currentPreviewFiles.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const newCard = document.createElement('div');
-                    newCard.classList.add('planet-card');
-
-                    // 弹窗询问描述
-                    let description = prompt("请输入这张照片的文字描述：");
-                    if (description === null) { // 如果用户取消
-                        description = "";
-                    }
-
-                    newCard.innerHTML = `
-                        <img src="${e.target.result}" alt="我们的星球">
-                        <div class="planet-description">${description.replace(/\n/g, '<br>')}</div>
+                list.forEach(obj => {
+                    const data = obj.attributes;
+                    const div = document.createElement('div');
+                    div.className = 'memory-card';
+                    
+                    let imgHtml = data.imgUrl ? `<img src="${data.imgUrl}" class="memory-img" loading="lazy">` : '';
+                    
+                    div.innerHTML = `
+                        <div class="memory-date">${obj.createdAt.toLocaleString()}</div>
+                        <div class="memory-text">${data.content || ''}</div>
+                        ${imgHtml}
+                        <div class="btn-delete" onclick="deleteMemory('${obj.id}')">删除</div>
                     `;
-                    photoGrid.appendChild(newCard);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            // 清空预览区
-            previewImagesContainer.innerHTML = '';
-            currentPreviewFiles = [];
-            alert('预览照片已添加到网站，但请注意，这些照片只会在您当前浏览器中显示，刷新页面后会消失。若要永久保存，请使用“前往免费图床上传”功能，并将链接手动替换到代码中。');
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                document.getElementById('memory-list').innerHTML = '<p style="text-align:center">暂时还没有回忆哦~</p>';
+            }
         }
 
+        // 5. 删除功能
+        async function deleteMemory(id) {
+            if(!confirm("确定要删除这条回忆吗？")) return;
+            const obj = AV.Object.createWithoutData('Memory', id);
+            await obj.destroy();
+            loadMemories(); // 刷新
+        }
+
+        loadMemories(); // 页面加载时运行
     </script>
 </body>
 </html>
