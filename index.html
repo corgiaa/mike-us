@@ -4,620 +4,632 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我们的宇宙之旅</title>
+    
     <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 
     <style>
-        /* --- 全局重置与字体 --- */
+        /* --- 全局样式 --- */
         body {
             margin: 0;
             padding: 0;
             background: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Microsoft YaHei', sans-serif;
             color: #fff;
-            overflow: hidden; /* 防止滚动条 */
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            overflow: hidden; /* 禁止滚动 */
+            width: 100vw;
+            height: 100vh;
+            user-select: none; /* 防止文字被意外选中 */
         }
 
-        /* --- 开场倒计时/星球页面 --- */
+        /* --- 1. 开场动画与星球 --- */
         #intro-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, #000000 0%, #1a0033 100%); /* 深邃宇宙渐变 */
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 2000;
-            opacity: 1;
-            transition: opacity 1s ease-in-out;
-            pointer-events: all;
+            transition: opacity 1s ease;
         }
-        #intro-screen.hidden {
-            opacity: 0;
-            pointer-events: none; /* 隐藏后不阻挡点击 */
-        }
-
         #intro-countdown {
             font-size: 3rem;
+            font-weight: bold;
             color: #fff;
-            text-shadow: 0 0 10px #87cefa;
-            margin-bottom: 30px;
+            text-shadow: 0 0 20px #87cefa;
+            margin-bottom: 40px;
+            letter-spacing: 5px;
         }
         #planet-container {
-            width: 300px;
-            height: 300px;
+            width: 300px; height: 300px;
             cursor: pointer;
             display: none; /* 倒计时结束后显示 */
-            position: relative;
-            animation: fadeIn 2s ease forwards;
+            animation: float 6s ease-in-out infinite;
         }
-        #planet-container::after {
-            content: "点击星球进入";
-            position: absolute;
-            bottom: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.7);
+        #click-hint {
+            margin-top: 20px;
+            color: rgba(255,255,255,0.6);
             font-size: 1rem;
+            animation: pulse 1.5s infinite;
+            display: none;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+
+        /* --- 2. 主界面布局 --- */
+        #main-app {
             opacity: 0;
-            animation: pulseText 2s infinite alternate ease-in-out 2s forwards;
-        }
-        @keyframes pulseText {
-            0% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-
-        /* --- 主页面布局 --- */
-        #main-app-container {
+            pointer-events: none;
+            transition: opacity 1.5s ease;
             width: 100%;
-            height: 100vh;
+            height: 100%;
             display: flex;
             position: relative;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-            pointer-events: none; /* 默认隐藏不响应 */
         }
-        #main-app-container.visible {
-            opacity: 1;
-            pointer-events: all;
-        }
+        #main-app.active { opacity: 1; pointer-events: all; }
 
         /* 左侧信息栏 */
         #left-panel {
-            width: 300px; /* 固定宽度 */
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
+            width: 320px;
+            height: 100%;
+            background: rgba(20, 20, 30, 0.6);
+            backdrop-filter: blur(15px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 100;
-            padding: 30px;
+            padding: 40px 30px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        #left-panel .title { font-size: 1.8rem; font-weight: bold; margin-bottom: 15px; color: #87cefa; }
-        #left-panel .description { font-size: 1rem; line-height: 1.6; color: rgba(255, 255, 255, 0.8); margin-bottom: 30px; }
-        #left-panel .timer-display { 
-            font-size: 1.2rem; color: rgba(255, 255, 255, 0.9); letter-spacing: 1px;
-            text-shadow: 0 0 5px rgba(135,206,250,0.5);
-        }
-
-        /* 右侧宇宙背景与回忆卡片 */
-        #right-content {
-            flex-grow: 1; /* 占据剩余空间 */
+            z-index: 100;
             position: relative;
-            overflow: hidden; /* 防止流星溢出 */
         }
-
-        #meteor-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* --- 回忆卡片 --- */
-        #memory-container {
-            position: relative; /* 所有的卡片都将是绝对定位的子元素 */
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* 隐藏超出范围的卡片 */
-        }
-        .memory-card {
-            position: absolute; /* 实现拖拽和自由摆放 */
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-            padding: 15px;
-            min-width: 200px; /* 最小宽度 */
-            max-width: 400px; /* 最大宽度 */
-            resize: both; /* 允许改变大小 */
-            overflow: auto; /* 内容溢出时滚动 */
-            cursor: grab; /* 拖拽手势 */
-            z-index: 10;
-            transition: box-shadow 0.2s ease;
-        }
-        .memory-card:hover {
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6), 0 0 15px rgba(135,206,250,0.4);
-        }
-        .memory-card.dragging { cursor: grabbing; z-index: 100; /* 拖拽时置顶 */ }
-
-        .memory-image {
-            width: 100%;
-            height: auto; /* 自适应高度 */
-            max-height: 250px; /* 图片最大高度 */
-            object-fit: contain; /* 保持图片完整，不裁剪 */
+        .app-title { font-size: 1.8rem; color: #87cefa; margin-bottom: 10px; font-weight: bold; }
+        .app-desc { font-size: 0.9rem; color: #aaa; line-height: 1.6; margin-bottom: 40px; }
+        .timer-box {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
             border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .timer-label { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        #timer-display { font-size: 1.2rem; color: #fff; font-family: monospace; }
+
+        /* 右侧内容区 */
+        #right-panel {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #meteor-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- 3. 回忆卡片 (可拖拽) --- */
+        .memory-card {
+            position: absolute; /* 绝对定位实现自由拖拽 */
+            width: 260px;
+            background: rgba(30, 30, 40, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: grab;
+            transition: transform 0.1s, box-shadow 0.2s;
+            user-select: none;
+            color: #eee;
+        }
+        .memory-card:active { cursor: grabbing; transform: scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 999 !important; }
+        .memory-card img {
+            width: 100%;
+            border-radius: 8px;
+            pointer-events: none; /* 防止拖拽图片本身 */
+            display: block;
             margin-bottom: 10px;
         }
-        .memory-text { font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; white-space: pre-wrap; }
-        .memory-date { font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); }
-
-        .btn-delete {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: color 0.2s;
+        .memory-text { font-size: 0.9rem; line-height: 1.5; margin-bottom: 8px; color: #ddd; }
+        .memory-date { font-size: 0.75rem; color: #888; }
+        .play-icon {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; display: none; /* 只有有音乐时才显示 */
         }
-        .btn-delete:hover { color: #ff6b6b; }
+        .btn-delete {
+            position: absolute; top: 10px; right: 10px;
+            color: rgba(255,255,255,0.2); cursor: pointer; font-size: 14px;
+        }
+        .btn-delete:hover { color: #ff4d4d; }
 
-        /* --- 底部控制面板 --- */
-        #control-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
+        /* --- 4. 底部控制栏 --- */
+        #control-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            height: 60px;
+            background: rgba(0,0,0,0.8);
             backdrop-filter: blur(10px);
-            padding: 15px 0;
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: center; align-items: center; gap: 50px;
             z-index: 1000;
         }
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: color 0.2s;
+        .ctrl-btn {
+            color: #aaa; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; transition: 0.3s;
         }
-        .control-item:hover { color: #87cefa; }
-        .control-item i { font-size: 1.8rem; margin-bottom: 5px; }
+        .ctrl-btn i { font-size: 1.2rem; margin-bottom: 4px; }
+        .ctrl-btn:hover { color: #87cefa; }
 
-        /* --- 弹窗样式 (模态框) --- */
-        .modal {
-            display: none; 
-            position: fixed;
-            z-index: 1001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            overflow-y: auto; /* 允许内容滚动 */
+        /* --- 5. 弹窗 --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
         }
-        .modal-content {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            position: relative;
-            color: #fff;
+        .modal-box {
+            background: #1a1a1a; width: 90%; max-width: 400px;
+            padding: 25px; border-radius: 15px; border: 1px solid #333;
+            color: #fff; position: relative;
         }
-        .close-button {
-            position: absolute; top: 15px; right: 25px;
-            color: rgba(255, 255, 255, 0.5); font-size: 30px; font-weight: bold; cursor: pointer;
+        .modal-close { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #666; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #888; font-size: 0.9rem; }
+        .input-group input, .input-group textarea {
+            width: 100%; background: #333; border: 1px solid #444; color: #fff;
+            padding: 10px; border-radius: 5px; box-sizing: border-box; outline: none;
         }
-        .close-button:hover { color: #fff; }
+        #preview-box img { max-width: 100%; max-height: 150px; border-radius: 5px; display: block; margin: 10px auto; }
+        .btn-submit {
+            width: 100%; background: #87cefa; color: #000; border: none; padding: 12px;
+            border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        .btn-submit:disabled { background: #555; color: #888; cursor: not-allowed; }
 
-        .modal-content h3 { text-align: center; color: #87cefa; margin-bottom: 25px; }
-        .modal-content input[type="file"] { display: none; }
-        .modal-upload-area {
-            border: 2px dashed rgba(255, 255, 255, 0.4); border-radius: 10px; padding: 30px;
-            text-align: center; cursor: pointer; margin-bottom: 20px; transition: border-color 0.3s;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        .modal-upload-area:hover { border-color: #87cefa; background-color: rgba(135,206,250,0.1); }
-        
-        #modal-preview-img { max-width: 100px; border-radius: 8px; margin-top: 15px; display: block; margin-left: auto; margin-right: auto;}
-        #modal-preview-container { text-align: center; margin-bottom: 15px; display: none; }
-
-        .modal-content textarea, .modal-content input[type="text"] {
-            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.4);
-            color: #fff; font-size: 1rem; box-sizing: border-box;
-        }
-        .modal-content textarea::placeholder, .modal-content input::placeholder { color: rgba(255, 255, 255, 0.5); }
-        .modal-content button {
-            width: 100%; padding: 12px; border: none; border-radius: 8px;
-            background: #87cefa; color: #000; font-size: 1.1rem; font-weight: bold;
-            cursor: pointer; transition: background-color 0.3s;
-        }
-        .modal-content button:hover { background: #60a8e0; }
-        .modal-content button:disabled { background: #ccc; cursor: not-allowed; }
-
-        /* 媒体查询：适配小屏幕 */
-        @media (max-width: 768px) {
-            #left-panel {
-                width: 100%;
-                height: auto;
-                padding: 20px;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            }
-            #main-app-container {
-                flex-direction: column;
-            }
-            #right-content {
-                height: calc(100vh - 200px); /* 减去左侧面板和底部控制面板高度 */
-                overflow-y: auto; /* 允许回忆卡片滚动 */
-            }
-            .memory-card {
-                 max-width: 90%; /* 小屏幕上限制卡片宽度 */
-                 left: 50% !important; /* 强制居中 */
-                 transform: translateX(-50%); /* 强制居中 */
-                 margin-bottom: 20px; /* 增加间距 */
-                 position: relative; /* 相对定位方便滚动 */
-                 resize: none; /* 小屏幕禁用缩放 */
-            }
-            #memory-container {
-                display: flex; /* 让卡片堆叠 */
-                flex-direction: column;
-                align-items: center; /* 居中 */
-                overflow-y: auto; /* 允许滚动 */
-                height: 100%; /* 填充父容器 */
-            }
-             #control-panel {
-                gap: 15px;
-                padding: 10px 0;
-            }
-            .control-item i { font-size: 1.5rem; }
-            .control-item span { font-size: 0.7rem; }
-        }
     </style>
 </head>
 <body>
 
+    <audio id="bgm-player"></audio>
+
     <div id="intro-screen">
         <div id="intro-countdown"></div>
         <div id="planet-container"></div>
+        <div id="click-hint">点击星球进入宇宙</div>
     </div>
 
-    <div id="main-app-container">
+    <div id="main-app">
         <div id="left-panel">
-            <div class="title">我们的宇宙航行日记</div>
-            <div class="description">
-                点亮每一颗回忆之星，
-                记录我们穿越时空的爱恋。
+            <div class="app-title">COSMIC LOVE</div>
+            <div class="app-desc">
+                在这浩瀚宇宙中，<br>
+                每一颗星都是我们的回忆。<br>
+                (提示: 卡片可以随意拖拽哦)
             </div>
-            <div class="timer-display" id="main-timer">加载中...</div>
+            <div class="timer-box">
+                <div class="timer-label">我们已经航行了</div>
+                <div id="timer-display">...</div>
+            </div>
         </div>
 
-        <div id="right-content">
+        <div id="right-panel">
             <canvas id="meteor-canvas"></canvas>
-            <audio id="audio-player" preload="auto"></audio>
+            <div id="memory-layer"></div>
+        </div>
 
-            <div id="memory-container">
-                <p style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:rgba(255,255,255,0.6); text-align:center;">
-                    正在召唤回忆星球...
-                </p>
+        <div id="control-bar">
+            <div class="ctrl-btn" onclick="openModal()">
+                <i class="fas fa-plus-circle"></i> 添加
+            </div>
+            <div class="ctrl-btn" onclick="arrangeCards()">
+                <i class="fas fa-th-large"></i> 整理
+            </div>
+            <div class="ctrl-btn" onclick="scatterCards()">
+                <i class="fas fa-random"></i> 散落
             </div>
         </div>
     </div>
 
-    <div id="control-panel">
-        <div class="control-item" onclick="openAddModal()">
-            <i class="fas fa-plus-circle"></i> <span>添加回忆</span>
-        </div>
-        <div class="control-item" onclick="shuffleCards()">
-            <i class="fas fa-random"></i> <span>随机布局</span>
-        </div>
-        <div class="control-item" onclick="resetCards()">
-            <i class="fas fa-redo-alt"></i> <span>重置位置</span>
-        </div>
-    </div>
-
-    <div id="addMemoryModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeAddModal()">&times;</span>
-            <h3>发射新的回忆卫星</h3>
-
-            <div class="modal-upload-area" id="modal-drop-area">
-                <p>点击或拖拽照片到这里</p>
-                <input type="file" id="modal-file-input" accept="image/*">
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h3 style="text-align:center; margin-top:0;">记录新发现</h3>
+            
+            <div class="input-group" style="border: 2px dashed #444; padding: 20px; text-align: center; cursor: pointer;" onclick="document.getElementById('file-input').click()">
+                <p style="margin:0; color:#888;">点击选择照片</p>
+                <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileSelect(this)">
             </div>
-            <div id="modal-preview-container">
-                <img id="modal-preview-img" src="">
-                <span style="font-size:0.8rem; color:rgba(255,255,255,0.7); margin-top:5px; display:block;">已选择图片</span>
-            </div>
+            <div id="preview-box"></div>
 
-            <textarea id="modal-text-input" rows="4" placeholder="写下回忆中的点滴..."></textarea>
-            <input type="text" id="modal-music-input" placeholder="粘贴音乐URL (可选，例如: .mp3)">
-            <button id="modal-publish-btn" onclick="publishMemory()">发布回忆</button>
+            <div class="input-group">
+                <textarea id="input-content" rows="3" placeholder="写下这段回忆..."></textarea>
+            </div>
+            <div class="input-group">
+                <input type="text" id="input-music" placeholder="背景音乐链接 (可选, .mp3)">
+            </div>
+            <button class="btn-submit" id="btn-pub" onclick="publish()">发布到宇宙</button>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // 👇👇👇 记得重新填入你的 Key 和 Server URL !!! 👇👇👇
-        // ==========================================
-        const APP_ID = 'gxw6RPvsW0eKgz0uvv7r78LF-MdYXbMMI'; 
-        const APP_KEY = 'FAhjdMJ1gGA5WggHPqO5cBF8';
-        const SERVER_URL = "https://gxw6rpvs.api.lncldglobal.com"; // 例如: https://xxxx.api.lncldglobal.com
-        // ==========================================
+        // =====================================================
+        // ✅ 配置区域 (已自动填入你的信息)
+        // =====================================================
+        const CONFIG = {
+            appId: 'gxw6RPvsW0eKgz0uvv7r78LF-MdYXbMMI',
+            appKey: 'FAhjdMJ1gGA5WggHPqO5cBF8',
+            serverURL: 'https://gxw6rpvs.api.lncldglobal.com',
+            startDate: '2023-05-20T13:14:00' // 在这里修改恋爱开始时间
+        };
 
-        // LeanCloud 初始化
-        if (APP_ID === '你的APP_ID' || APP_KEY === '你的APP_KEY') {
-            alert("请先修改代码里的 APP_ID 和 APP_KEY！");
-        } else {
-             if(SERVER_URL && SERVER_URL.startsWith("http")) {
-                 AV.init({ appId: APP_ID, appKey: APP_KEY, serverURL: SERVER_URL });
-            } else {
-                 AV.init({ appId: APP_ID, appKey: APP_KEY });
+        // 初始化 LeanCloud
+        AV.init({ appId: CONFIG.appId, appKey: CONFIG.appKey, serverURL: CONFIG.serverURL });
+
+        // =====================================================
+        // 🎬 1. 开场逻辑
+        // =====================================================
+        let count = 3;
+        const countdownEl = document.getElementById('intro-countdown');
+        const planetEl = document.getElementById('planet-container');
+        const hintEl = document.getElementById('click-hint');
+
+        // 启动倒计时
+        const timer = setInterval(() => {
+            countdownEl.innerText = `宇宙链接中... ${count}`;
+            count--;
+            if (count < 0) {
+                clearInterval(timer);
+                countdownEl.style.display = 'none';
+                initThreeJSPlanet(); // 初始化3D星球
+                planetEl.style.display = 'block';
+                hintEl.style.display = 'block';
             }
-        }
+        }, 1000);
 
-        // --- 全局配置 ---
-        const CLIENT_START_DATE = new Date("2023-05-20T13:14:00"); // 你的开始日期
-        let currentPlayingCard = null; // 当前正在播放音乐的卡片
-
-        // --- 1. 开场动画 (倒计时 & 3D星球) ---
-        const introScreen = document.getElementById('intro-screen');
-        const introCountdown = document.getElementById('intro-countdown');
-        const planetContainer = document.getElementById('planet-container');
-        const mainAppContainer = document.getElementById('main-app-container');
-
-        // 倒计时变量 (例如：模拟地球上线倒计时)
-        let countdownValue = 3; // 3秒倒计时
-        let countdownInterval;
-
-        function startIntroCountdown() {
-            introCountdown.style.display = 'block';
-            planetContainer.style.display = 'none';
-
-            countdownInterval = setInterval(() => {
-                introCountdown.innerText = `进入倒计时：${countdownValue} 秒`;
-                countdownValue--;
-
-                if (countdownValue < 0) {
-                    clearInterval(countdownInterval);
-                    introCountdown.style.display = 'none';
-                    showPlanet();
-                }
-            }, 1000);
-        }
-
-        let planetMesh; // Three.js星球对象
-        function showPlanet() {
-            planetContainer.style.display = 'block';
-
-            // Three.js 场景设置
+        // 3D 星球渲染
+        function initThreeJSPlanet() {
+            const width = 300;
+            const height = 300;
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, planetContainer.offsetWidth / planetContainer.offsetHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // alpha: true 允许背景透明
-            renderer.setSize(planetContainer.offsetWidth, planetContainer.offsetHeight);
-            planetContainer.appendChild(renderer.domElement);
+            const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(width, height);
+            planetEl.appendChild(renderer.domElement);
 
-            // 添加一个光源
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(5, 5, 5).normalize();
+            // 创建球体
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
+            // 使用更漂亮的纹理加载器，或者使用颜色
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0x2a75bb, // 蓝色星球
+                emissive: 0x112244,
+                specular: 0x111111,
+                shininess: 30,
+                wireframe: false
+            }); 
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            // 光照
+            const light = new THREE.DirectionalLight(0xffffff, 1.5);
+            light.position.set(10, 10, 10);
             scene.add(light);
-            const ambientLight = new THREE.AmbientLight(0x404040); // 柔和的环境光
-            scene.add(ambientLight);
+            const ambient = new THREE.AmbientLight(0x404040);
+            scene.add(ambient);
 
-            // 创建星球 (例如一个带有纹理的球体)
-            const geometry = new THREE.SphereGeometry(1.5, 32, 32);
-            // 可以换成你自己的星球纹理图片，或者用一个简单的颜色
-            const textureLoader = new THREE.TextureLoader();
-            const planetTexture = textureLoader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_atmos_2048.jpg'); // 地球纹理
-            const material = new THREE.MeshPhongMaterial({ map: planetTexture }); // MeshPhongMaterial 响应光照
-            
-            planetMesh = new THREE.Mesh(geometry, material);
-            scene.add(planetMesh);
+            camera.position.z = 15;
 
-            camera.position.z = 3;
-
-            // 渲染循环
             function animate() {
                 requestAnimationFrame(animate);
-                planetMesh.rotation.y += 0.005; // 缓慢旋转
+                sphere.rotation.y += 0.01; // 自转
+                sphere.rotation.x += 0.005;
                 renderer.render(scene, camera);
             }
             animate();
-
-            // 点击星球进入主页
-            planetContainer.addEventListener('click', enterMainApp);
         }
 
-        function enterMainApp() {
-            introScreen.classList.add('hidden'); // 隐藏开场页面
-            mainAppContainer.classList.add('visible'); // 显示主页面
-            loadMemories(); // 加载回忆
-            initTimer('main-timer', CLIENT_START_DATE); // 启动主页计时器
-            // 确保 Three.js 资源被清理，避免内存泄露 (可选，如果只有一次渲染)
-            if(planetMesh) {
-                planetMesh.geometry.dispose();
-                planetMesh.material.dispose();
-                planetMesh.parent.remove(planetMesh);
-                // 移除渲染器dom，清空planetContainer
-                while (planetContainer.firstChild) {
-                    planetContainer.removeChild(planetContainer.firstChild);
-                }
-            }
-        }
-        
-        // --- 2. 计时器函数 (可复用) ---
-        function initTimer(elementId, startDate) {
-            const timerElement = document.getElementById(elementId);
-            setInterval(() => {
-                const diff = new Date() - startDate;
-                const days = Math.floor(diff / (86400000));
-                const hours = Math.floor((diff / 3600000) % 24);
-                const minutes = Math.floor((diff / 60000) % 60);
-                const seconds = Math.floor((diff / 1000) % 60);
-                timerElement.innerText = `已航行 ${days} 天 ${hours} 时 ${minutes} 分 ${seconds} 秒`;
+        // 点击星球进入
+        planetEl.addEventListener('click', () => {
+            document.getElementById('intro-screen').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('intro-screen').style.display = 'none';
+                document.getElementById('main-app').classList.add('active');
+                resizeCanvas(); // 修正流星画布尺寸
+                loadMemories(); // 加载数据
             }, 1000);
-        }
+        });
 
-        // --- 3. 流星背景动画 (修复彗尾方向和左侧出现问题) ---
+        // =====================================================
+        // 🌠 2. 流星系统 (修复方向与出现位置)
+        // =====================================================
         const canvas = document.getElementById('meteor-canvas');
         const ctx = canvas.getContext('2d');
         let meteors = [];
 
         function resizeCanvas() {
-            canvas.width = window.innerWidth - (mainAppContainer.classList.contains('visible') ? 300 : 0); // 减去左侧面板宽度
-            canvas.height = window.innerHeight - (mainAppContainer.classList.contains('visible') ? 60 : 0); // 减去底部面板高度
+            canvas.width = document.getElementById('right-panel').offsetWidth;
+            canvas.height = document.getElementById('right-panel').offsetHeight;
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        function createMeteor() {
-            // 修复：从屏幕左侧到右侧的随机位置进入
-            const startX = Math.random() * (canvas.width * 1.5) - canvas.width * 0.5; // 从屏幕外左边到屏幕内
-            const startY = Math.random() * (canvas.height * 1.5) - canvas.height * 0.5; // 从屏幕外上方到屏幕内
+        class Meteor {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // 核心修复：从屏幕左侧(-100px)到屏幕中间随机宽度出现
+                this.x = Math.random() * canvas.width * 0.5 - 100; 
+                // 从屏幕顶部(-100px)到屏幕中间随机高度
+                this.y = Math.random() * canvas.height * 0.5 - 100;
+                
+                this.len = Math.random() * 80 + 50;
+                this.speed = Math.random() * 4 + 2;
+                this.size = Math.random() * 2 + 0.5;
+                // 角度固定为右下方 (45度)
+                this.angle = Math.PI / 4; 
+            }
+            update() {
+                this.x += this.speed * Math.cos(this.angle);
+                this.y += this.speed * Math.sin(this.angle);
 
-            // 修复：流星移动方向改为从左上到右下
-            const angle = Math.PI / 4 + (Math.random() - 0.5) * (Math.PI / 8); // 45度左右
-            const speed = Math.random() * 5 + 2; // 2-7
-            const length = Math.random() * 80 + 20; // 20-100
-            const brightness = Math.random() * 0.5 + 0.5; // 亮度 0.5-1
-
-            return { x: startX, y: startY, length, speed, angle, brightness };
-        }
-
-        function updateMeteors() {
-            for (let i = 0; i < meteors.length; i++) {
-                const m = meteors[i];
-                // 修复：移动方向和彗尾方向一致
-                m.x += m.speed * Math.cos(m.angle);
-                m.y += m.speed * Math.sin(m.angle);
-
-                // 如果流星出界，重新生成
-                // 修复：判断出界条件为超出右下角
-                if (m.y > canvas.height + m.length || m.x > canvas.width + m.length) {
-                    meteors[i] = createMeteor();
+                // 边界检查：如果跑出右边或下边太远，重置
+                if (this.x > canvas.width + 100 || this.y > canvas.height + 100) {
+                    this.reset();
                 }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                
+                // 画流星头
+                const gradient = ctx.createLinearGradient(0, 0, -this.len, 0);
+                gradient.addColorStop(0, "rgba(255,255,255,1)");
+                gradient.addColorStop(1, "rgba(255,255,255,0)");
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-this.len, -1);
+                ctx.lineTo(-this.len, 1);
+                ctx.fill();
+                
+                ctx.restore();
             }
         }
 
-        function drawMeteors() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // 清空画布
-            meteors.forEach(m => {
-                ctx.beginPath();
-                // 修复：彗尾方向与移动方向一致
-                const gradient = ctx.createLinearGradient(
-                    m.x - m.length * Math.cos(m.angle), // 彗尾起点
-                    m.y - m.length * Math.sin(m.angle), // 彗尾起点
-                    m.x, m.y
-                );
-                gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
-                gradient.addColorStop(1, `rgba(255, 255, 255, ${m.brightness})`);
-                ctx.strokeStyle = gradient;
-                ctx.lineWidth = 1.5;
-                ctx.moveTo(m.x - m.length * Math.cos(m.angle), m.y - m.length * Math.sin(m.angle));
-                ctx.lineTo(m.x, m.y);
-                ctx.stroke();
+        function loopMeteors() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            meteors.forEach(m => { m.update(); m.draw(); });
+            requestAnimationFrame(loopMeteors);
+        }
+
+        // 创建流星
+        for(let i=0; i<20; i++) meteors.push(new Meteor());
+        loopMeteors();
+
+
+        // =====================================================
+        // 💾 3. 数据与卡片逻辑 (LeanCloud + 拖拽)
+        // =====================================================
+        const memoryLayer = document.getElementById('memory-layer');
+        let zIndexCounter = 10; // 用于层级控制
+
+        // 加载回忆
+        async function loadMemories() {
+            const query = new AV.Query('Memory');
+            query.descending('createdAt');
+            query.limit(50);
+            try {
+                const list = await query.find();
+                memoryLayer.innerHTML = '';
+                list.forEach((item, index) => {
+                    createCard(item, index);
+                });
+                scatterCards(); // 默认随机散落
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // 创建单个卡片 DOM
+        function createCard(item, index) {
+            const data = item.attributes;
+            const div = document.createElement('div');
+            div.className = 'memory-card';
+            div.id = 'card-' + item.id;
+            
+            // 初始化随机位置
+            div.style.left = '50px';
+            div.style.top = '50px';
+
+            // 音乐图标
+            const musicIcon = data.musicUrl ? `<div class="play-icon" onclick="toggleMusic('${data.musicUrl}', this)"><i class="fas fa-music"></i></div>` : '';
+            
+            // 图片
+            const imgHtml = data.imgUrl ? `<img src="${data.imgUrl}" draggable="false">` : '';
+
+            div.innerHTML = `
+                ${musicIcon}
+                <div class="btn-delete" onclick="deleteMemory('${item.id}')"><i class="fas fa-times"></i></div>
+                ${imgHtml}
+                <div class="memory-text">${data.content || ''}</div>
+                <div class="memory-date">${item.createdAt.toLocaleDateString()}</div>
+            `;
+
+            // 绑定拖拽事件
+            setupDrag(div);
+            
+            // 鼠标按下提升层级
+            div.addEventListener('mousedown', () => {
+                div.style.zIndex = ++zIndexCounter;
+            });
+
+            memoryLayer.appendChild(div);
+        }
+
+        // 拖拽逻辑核心
+        function setupDrag(el) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            el.addEventListener('mousedown', (e) => {
+                // 如果点的是删除按钮或播放按钮，不拖拽
+                if(e.target.closest('.btn-delete') || e.target.closest('.play-icon')) return;
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                el.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                el.style.left = `${initialLeft + dx}px`;
+                el.style.top = `${initialTop + dy}px`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                el.style.cursor = 'grab';
             });
         }
 
-        function animateMeteors() {
-            updateMeteors();
-            drawMeteors();
-            requestAnimationFrame(animateMeteors);
+        // 随机散落布局
+        function scatterCards() {
+            const cards = document.querySelectorAll('.memory-card');
+            const containerW = document.getElementById('right-panel').offsetWidth;
+            const containerH = document.getElementById('right-panel').offsetHeight;
+
+            cards.forEach(card => {
+                const x = Math.random() * (containerW - 300);
+                const y = Math.random() * (containerH - 200);
+                const rotate = (Math.random() - 0.5) * 20; // -10 ~ 10度旋转
+                
+                card.style.left = Math.max(0, x) + 'px';
+                card.style.top = Math.max(0, y) + 'px';
+                card.style.transform = `rotate(${rotate}deg)`;
+            });
         }
 
-        // 初始化流星
-        for (let i = 0; i < 50; i++) { // 增加流星数量
-            meteors.push(createMeteor());
+        // 整理布局 (网格)
+        function arrangeCards() {
+            const cards = document.querySelectorAll('.memory-card');
+            let x = 20, y = 20;
+            cards.forEach(card => {
+                card.style.transform = `rotate(0deg)`;
+                card.style.left = x + 'px';
+                card.style.top = y + 'px';
+                
+                x += 280; // 卡片宽+间距
+                if(x > document.getElementById('right-panel').offsetWidth - 280) {
+                    x = 20;
+                    y += 300; // 换行
+                }
+            });
         }
-        animateMeteors();
 
-        // --- 4. 音乐播放器 ---
-        const audioPlayer = document.getElementById('audio-player');
+        // =====================================================
+        // 🎵 音乐控制
+        // =====================================================
+        const player = document.getElementById('bgm-player');
+        let currentBtn = null;
 
-        function playMusic(musicUrl) {
-            if (!musicUrl) return;
-            // 如果已经在播放这首歌，就暂停/播放切换
-            if (audioPlayer.src === musicUrl && !audioPlayer.paused) {
-                audioPlayer.pause();
-                currentPlayingCard = null;
+        function toggleMusic(url, btn) {
+            // 停止之前的动画
+            if (currentBtn) currentBtn.querySelector('i').classList.remove('fa-spin');
+
+            if (player.src === url && !player.paused) {
+                player.pause();
+                currentBtn = null;
             } else {
-                audioPlayer.src = musicUrl;
-                audioPlayer.play();
+                player.src = url;
+                player.play();
+                currentBtn = btn;
+                btn.querySelector('i').classList.add('fa-spin'); // 旋转图标
             }
         }
 
-        // --- 5. 模态框逻辑 ---
-        const addMemoryModal = document.getElementById('addMemoryModal');
-        const modalFileInput = document.getElementById('modal-file-input');
-        const modalDropArea = document.getElementById('modal-drop-area');
-        const modalPreviewContainer = document.getElementById('modal-preview-container');
-        const modalPreviewImg = document.getElementById('modal-preview-img');
-        const modalTextInput = document.getElementById('modal-text-input');
-        const modalMusicInput = document.getElementById('modal-music-input');
-        const modalPublishBtn = document.getElementById('modal-publish-btn');
-        let modalSelectedFile = null;
+        // =====================================================
+        // 🛠️ 发布与删除
+        // =====================================================
+        let selectedFile = null;
 
-        function openAddModal() {
-            addMemoryModal.style.display = 'flex';
-            modalSelectedFile = null;
-            modalFileInput.value = '';
-            modalPreviewContainer.style.display = 'none';
-            modalDropArea.style.display = 'block';
-            modalTextInput.value = '';
-            modalMusicInput.value = '';
-            modalPublishBtn.innerText = "发布回忆";
-            modalPublishBtn.disabled = false;
+        function openModal() { document.getElementById('add-modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                selectedFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('preview-box').innerHTML = `<img src="${e.target.result}">`;
+                }
+                reader.readAsDataURL(selectedFile);
+            }
         }
 
-        function closeAddModal() {
-            addMemoryModal.style.display = 'none';
+        async function publish() {
+            const text = document.getElementById('input-content').value;
+            const music = document.getElementById('input-music').value;
+            const btn = document.getElementById('btn-pub');
+
+            if(!text && !selectedFile) return alert("请至少写点什么或传张图");
+
+            btn.disabled = true;
+            btn.innerText = "上传中...";
+
+            try {
+                let imgUrl = "";
+                if (selectedFile) {
+                    const f = new AV.File(selectedFile.name, selectedFile);
+                    await f.save();
+                    imgUrl = f.url();
+                }
+
+                const Memory = AV.Object.extend('Memory');
+                const m = new Memory();
+                m.set('content', text);
+                m.set('imgUrl', imgUrl);
+                m.set('musicUrl', music);
+                await m.save();
+
+                closeModal();
+                loadMemories(); // 刷新显示
+                // 重置表单
+                document.getElementById('input-content').value = '';
+                document.getElementById('preview-box').innerHTML = '';
+                selectedFile = null;
+                alert("发布成功！");
+            } catch (error) {
+                alert("发布失败: " + error.message);
+            }
+            btn.disabled = false;
+            btn.innerText = "发布到宇宙";
         }
 
-        modalDropArea.addEventListener('click', () => modalFileInput.click());
-        modalFileInput.addEventListener('change', (e) => handleModalFile(e.target.files[0]));
-        modalDropArea.addEventListener('drop', (e) => { e.preventDefault(); handleModalFile(e.dataTransfer.files[0]); });
-        ['dragenter', 'dragover'].forEach(e => modalDropArea.addEventListener(e, (ev)=>{ ev.preventDefault(); modalDropArea.style.borderColor = '#87cefa'; }));
-        ['dragleave', 'drop'].forEach(e => modalDropArea.addEventListener(e, (ev)=>{ ev.preventDefault(); modalDropArea.style.borderColor = 'rgba(255, 255, 255, 0.4)'; }));
+        async function deleteMemory(id) {
+            if(!confirm("确定让这条回忆消失在黑洞中吗？")) return;
+            const o = AV.Object.createWithoutData('Memory', id);
+            await o.destroy();
+            document.getElementById('card-' + id).remove();
+        }
 
-        function handleModalFile(file) {
-            if (!file || !file.type.startsWith('image/')) return;
-            modalSelectedFile = file;
-            const reader = new FileReader();
-            reader.
+        // 计时器
+        const start = new Date(CONFIG.startDate);
+        setInterval(() => {
+            const diff = new Date() - start;
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff / 3600000) % 24);
+            const m = Math.floor((diff / 60000) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            document.getElementById('timer-display').innerText = `${d}天 ${h}时 ${m}分 ${s}秒`;
+        }, 1000);
+
+    </script>
+</body>
+</html>
